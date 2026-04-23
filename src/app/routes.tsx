@@ -1,0 +1,137 @@
+import { createBrowserRouter } from "react-router";
+import App from "./App";
+import Login from "./pages/auth/Login";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
+import Dashboard from "./pages/Dashboard";
+import SitesList from "./pages/management/SitesList";
+import SiteDetail from "./pages/management/SiteDetail";
+import CreateSite from "./pages/management/CreateSite";
+import AddZone from "./pages/management/AddZone";
+import ZoneList from "./pages/management/ZoneList";
+import ZoneDetail from "./pages/management/ZoneDetail";
+import ParkingLotList from "./pages/management/ParkingLotList";
+import LiveOperations from "./pages/operations/LiveOperations";
+import Violations from "./pages/operations/Violations";
+import Payments from "./pages/operations/Payments";
+import Devices from "./pages/operations/Devices";
+import Compliance from "./pages/operations/Compliance";
+import Reports from "./pages/analytics/Reports";
+import UsageStatistics from "./pages/analytics/UsageStatistics";
+import PolicyLibrary from "./pages/configuration/PolicyLibrary";
+import Tariffs from "./pages/configuration/Tariffs";
+import Permits from "./pages/configuration/Permits";
+import EventsCalendar from "./pages/configuration/EventsCalendar";
+import Users from "./pages/admin/Users";
+import AuditLogs from "./pages/admin/AuditLogs";
+import Settings from "./pages/admin/Settings";
+import MainLayout from "./components/layouts/MainLayout";
+
+export const router = createBrowserRouter([
+  {
+    path: "/login",
+    Component: Login,
+  },
+  {
+    path: "/forgot-password",
+    Component: ForgotPassword,
+  },
+  {
+    path: "/reset-password",
+    Component: ResetPassword,
+  },
+  {
+    path: "/",
+    Component: MainLayout,
+    children: [
+      {
+        index: true,
+        Component: Dashboard,
+      },
+      {
+        path: "management/sites",
+        Component: SitesList,
+      },
+      {
+        path: "management/sites/create",
+        Component: CreateSite,
+      },
+      {
+        path: "management/sites/:id",
+        Component: SiteDetail,
+      },
+      {
+        path: "management/zones",
+        Component: ZoneList,
+      },
+      {
+        path: "management/zones/add/:siteId",
+        Component: AddZone,
+      },
+      {
+        path: "management/zones/:id",
+        Component: ZoneDetail,
+      },
+      {
+        path: "management/parking-lots",
+        Component: ParkingLotList,
+      },
+      {
+        path: "operations/live",
+        Component: LiveOperations,
+      },
+      {
+        path: "operations/violations",
+        Component: Violations,
+      },
+      {
+        path: "operations/payments",
+        Component: Payments,
+      },
+      {
+        path: "operations/devices",
+        Component: Devices,
+      },
+      {
+        path: "operations/compliance",
+        Component: Compliance,
+      },
+      {
+        path: "analytics/reports",
+        Component: Reports,
+      },
+      {
+        path: "analytics/usage",
+        Component: UsageStatistics,
+      },
+      {
+        path: "configuration/policies",
+        Component: PolicyLibrary,
+      },
+      {
+        path: "configuration/tariffs",
+        Component: Tariffs,
+      },
+      {
+        path: "configuration/permits",
+        Component: Permits,
+      },
+      {
+        path: "configuration/events",
+        Component: EventsCalendar,
+      },
+      {
+        path: "admin/users",
+        Component: Users,
+      },
+      {
+        path: "admin/audit-logs",
+        Component: AuditLogs,
+      },
+      {
+        path: "admin/settings",
+        Component: Settings,
+      },
+    ],
+  },
+]);
