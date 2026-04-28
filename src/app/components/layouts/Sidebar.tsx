@@ -20,6 +20,7 @@ import {
   ClipboardList,
   CalendarClock,
   Layers,
+  Car,
 } from "lucide-react";
 
 interface NavItem {
@@ -94,6 +95,11 @@ const navigationSections: NavSection[] = [
         label: "Devices",
         path: "/operations/devices",
         icon: <Tablet className="size-5" />,
+      },
+      {
+        label: "Enforcement Vehicles",
+        path: "/operations/enforcement-vehicles",
+        icon: <Car className="size-5" />,
       },
     ],
   },

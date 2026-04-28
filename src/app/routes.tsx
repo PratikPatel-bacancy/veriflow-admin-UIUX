@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import App from "./App";
 import Login from "./pages/auth/Login";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -16,6 +16,9 @@ import Violations from "./pages/operations/Violations";
 import Payments from "./pages/operations/Payments";
 import Devices from "./pages/operations/Devices";
 import Compliance from "./pages/operations/Compliance";
+import EnforcementVehicles from "./pages/operations/EnforcementVehicles";
+import AddEnforcementVehicle from "./pages/operations/AddEnforcementVehicle";
+import EnforcementVehicleDetail from "./pages/operations/EnforcementVehicleDetail";
 import Reports from "./pages/analytics/Reports";
 import UsageStatistics from "./pages/analytics/UsageStatistics";
 import PolicyLibrary from "./pages/configuration/PolicyLibrary";
@@ -100,6 +103,26 @@ export const router = createBrowserRouter([
       {
         path: "operations/compliance",
         Component: Compliance,
+      },
+      {
+        path: "operations/fleet",
+        element: <Navigate to="/operations/enforcement-vehicles" replace />,
+      },
+      {
+        path: "operations/fleet/enforcement-vehicles",
+        element: <Navigate to="/operations/enforcement-vehicles" replace />,
+      },
+      {
+        path: "operations/enforcement-vehicles",
+        Component: EnforcementVehicles,
+      },
+      {
+        path: "operations/enforcement-vehicles/new",
+        Component: AddEnforcementVehicle,
+      },
+      {
+        path: "operations/enforcement-vehicles/:id",
+        Component: EnforcementVehicleDetail,
       },
       {
         path: "analytics/reports",
