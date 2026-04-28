@@ -19,6 +19,11 @@ import Compliance from "./pages/operations/Compliance";
 import Reports from "./pages/analytics/Reports";
 import UsageStatistics from "./pages/analytics/UsageStatistics";
 import PolicyLibrary from "./pages/configuration/PolicyLibrary";
+import PolicyAssignments from "./pages/configuration/PolicyAssignments";
+import PoliciesHome from "./pages/configuration/PoliciesHome";
+import CustomTemplateBuilder from "./pages/configuration/CustomTemplateBuilder";
+import PolicyAssignmentWizard from "./pages/configuration/PolicyAssignmentWizard";
+import PolicyDetail from "./pages/configuration/PolicyDetail";
 import Tariffs from "./pages/configuration/Tariffs";
 import Permits from "./pages/configuration/Permits";
 import EventsCalendar from "./pages/configuration/EventsCalendar";
@@ -106,7 +111,27 @@ export const router = createBrowserRouter([
       },
       {
         path: "configuration/policies",
+        Component: PoliciesHome,
+      },
+      {
+        path: "configuration/policies/templates",
         Component: PolicyLibrary,
+      },
+      {
+        path: "configuration/policies/assignments",
+        Component: PolicyAssignments,
+      },
+      {
+        path: "configuration/policies/assignments/new",
+        Component: PolicyAssignmentWizard,
+      },
+      {
+        path: "configuration/policies/:id",
+        Component: PolicyDetail,
+      },
+      {
+        path: "configuration/policies/templates/new",
+        Component: CustomTemplateBuilder,
       },
       {
         path: "configuration/tariffs",

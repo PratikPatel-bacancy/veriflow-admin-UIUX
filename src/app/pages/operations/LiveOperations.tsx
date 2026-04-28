@@ -1,4 +1,4 @@
-import { Car, Clock, X, Play, AlertTriangle } from "lucide-react";
+import { Car, Clock, X, Play, AlertTriangle, Info } from "lucide-react";
 import { useState } from "react";
 
 const liveVehicles = [
@@ -229,16 +229,28 @@ export default function LiveOperations() {
       {/* Stats */}
       <div className="px-8 pt-6 mb-6">
         <div className="grid grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6 shadow-sm">
+          <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6 shadow-sm relative">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8]">Active Vehicles</span>
+              <div className="flex items-center gap-1.5 group">
+                <span className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8]">In session vehicles</span>
+                <Info className="size-4 text-[#6b7280] dark:text-[#94a3b8] cursor-help" />
+                <div className="invisible group-hover:visible absolute left-6 top-12 w-64 bg-[#111827] dark:bg-[#1a2d47] text-white dark:text-[#e8eef5] text-xs rounded-lg px-3 py-2 shadow-lg z-50 border border-transparent dark:border-[rgba(59,130,246,0.15)]">
+                  Total number of vehicles currently active in a parking session across all monitored sites
+                </div>
+              </div>
               <Car className="size-5 text-[#3b82f6] dark:text-[#60a5fa]" />
             </div>
             <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">287</p>
           </div>
-          <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6 shadow-sm">
+          <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6 shadow-sm relative">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8]">Avg Duration</span>
+              <div className="flex items-center gap-1.5 group">
+                <span className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8]">Avg Duration</span>
+                <Info className="size-4 text-[#6b7280] dark:text-[#94a3b8] cursor-help" />
+                <div className="invisible group-hover:visible absolute left-6 top-12 w-64 bg-[#111827] dark:bg-[#1a2d47] text-white dark:text-[#e8eef5] text-xs rounded-lg px-3 py-2 shadow-lg z-50 border border-transparent dark:border-[rgba(59,130,246,0.15)]">
+                  Average length of time vehicles have been parked during their current active session
+                </div>
+              </div>
               <Clock className="size-5 text-[#ea580c] dark:text-[#fb923c]" />
             </div>
             <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">2.5h</p>
