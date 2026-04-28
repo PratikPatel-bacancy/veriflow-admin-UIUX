@@ -1,5 +1,6 @@
 import { Link } from "react-router";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Info } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/app/components/ui/tooltip";
 
 const mockParkingLots = [
   {
@@ -56,17 +57,37 @@ export default function ParkingLotList() {
       <div className="px-6 pt-6 mb-6">
         <div className="grid grid-cols-2 gap-5">
           <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
-            <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8] mb-1">
-              Total Parking Lots
-            </p>
+            <div className="flex items-center gap-1.5 mb-1">
+              <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8]">
+                Total Parking Lots
+              </p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="size-3.5 text-[#9ca3af] dark:text-[#6b7280] cursor-pointer hover:text-[#3b82f6] dark:hover:text-[#60a5fa] transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px] text-center">
+                  The total number of parking lots managed across all sites in the system.
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">
               {mockParkingLots.length}
             </p>
           </div>
           <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
-            <p className="font-['Inter'] font-normal text-[13px] text-[#dc2626] dark:text-[#f87171] mb-1">
-              Today's Active Violations
-            </p>
+            <div className="flex items-center gap-1.5 mb-1">
+              <p className="font-['Inter'] font-normal text-[13px] text-[#dc2626] dark:text-[#f87171]">
+                Today's Active Violations
+              </p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="size-3.5 text-[#dc2626] dark:text-[#f87171] cursor-pointer hover:opacity-70 transition-opacity" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px] text-center">
+                  The number of parking violations detected or issued across all lots today.
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#dc2626] dark:text-[#f87171]">
               12
             </p>

@@ -8,7 +8,6 @@ import {
   FileText,
   DollarSign,
   CreditCard,
-  Calendar,
   AlertTriangle,
   Wallet,
   Tablet,
@@ -18,6 +17,9 @@ import {
   Users,
   Shield,
   Settings,
+  ClipboardList,
+  CalendarClock,
+  Layers,
 } from "lucide-react";
 
 interface NavItem {
@@ -37,7 +39,7 @@ const navigationSections: NavSection[] = [
     title: "",
     items: [
       {
-        label: "Dashboard",
+        label: "Home",
         path: "/",
         icon: <LayoutDashboard className="size-5" />,
       },
@@ -111,27 +113,39 @@ const navigationSections: NavSection[] = [
     ],
   },
   {
-    title: "CONFIGURATION",
+    title: "POLICY CONFIGURATION",
     items: [
       {
-        label: "Policy Library",
+        label: "Policies",
         path: "/configuration/policies",
-        icon: <FileText className="size-5" />,
-      },
-      {
-        label: "Tariffs",
-        path: "/configuration/tariffs",
-        icon: <DollarSign className="size-5" />,
-      },
-      {
-        label: "Permits",
-        path: "/configuration/permits",
-        icon: <CreditCard className="size-5" />,
-      },
-      {
-        label: "Events Calendar",
-        path: "/configuration/events",
-        icon: <Calendar className="size-5" />,
+        icon: <Layers className="size-5" />,
+        children: [
+          {
+            label: "Templates",
+            path: "/configuration/policies/templates",
+            icon: <FileText className="size-4" />,
+          },
+          {
+            label: "Assignments",
+            path: "/configuration/policies/assignments",
+            icon: <ClipboardList className="size-4" />,
+          },
+          {
+            label: "Special Events",
+            path: "/configuration/events",
+            icon: <CalendarClock className="size-4" />,
+          },
+          {
+            label: "Permits",
+            path: "/configuration/permits",
+            icon: <CreditCard className="size-4" />,
+          },
+          {
+            label: "Tariffs",
+            path: "/configuration/tariffs",
+            icon: <DollarSign className="size-4" />,
+          },
+        ],
       },
     ],
   },

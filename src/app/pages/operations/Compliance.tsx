@@ -1,5 +1,5 @@
 import PageHeader from "../../components/common/PageHeader";
-import { CheckCircle2, AlertTriangle, XCircle, Search, Filter, Calendar, X, FileText } from "lucide-react";
+import { CheckCircle2, AlertTriangle, XCircle, Search, Filter, Calendar, X, FileText, Info } from "lucide-react";
 import { useState } from "react";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 
@@ -205,23 +205,41 @@ export default function Compliance() {
   return (
     <div className="flex-1 overflow-auto bg-[#eff6ff] dark:bg-[#0a1628] p-6">
       <div className="grid grid-cols-3 gap-6 mb-6">
-        <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6 shadow-sm">
+        <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6 shadow-sm relative">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8]">Compliant</span>
+            <div className="flex items-center gap-1.5 group">
+              <span className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8]">Compliant</span>
+              <Info className="size-4 text-[#6b7280] dark:text-[#94a3b8] cursor-help" />
+              <div className="invisible group-hover:visible absolute left-6 top-12 w-64 bg-[#111827] dark:bg-[#1a2d47] text-white dark:text-[#e8eef5] text-xs rounded-lg px-3 py-2 shadow-lg z-50 border border-transparent dark:border-[rgba(59,130,246,0.15)]">
+                Percentage of vehicles following all parking regulations and policies across monitored zones
+              </div>
+            </div>
             <CheckCircle2 className="size-5 text-[#16a34a] dark:text-[#34d399]" />
           </div>
           <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">{complianceRate}%</p>
         </div>
-        <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6 shadow-sm">
+        <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6 shadow-sm relative">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8]">Warnings</span>
+            <div className="flex items-center gap-1.5 group">
+              <span className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8]">Warnings</span>
+              <Info className="size-4 text-[#6b7280] dark:text-[#94a3b8] cursor-help" />
+              <div className="invisible group-hover:visible absolute left-6 top-12 w-64 bg-[#111827] dark:bg-[#1a2d47] text-white dark:text-[#e8eef5] text-xs rounded-lg px-3 py-2 shadow-lg z-50 border border-transparent dark:border-[rgba(59,130,246,0.15)]">
+                Number of vehicles that received a warning for a minor parking rule infraction without a formal citation
+              </div>
+            </div>
             <AlertTriangle className="size-5 text-[#ea580c] dark:text-[#fb923c]" />
           </div>
           <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">{warningsCount}</p>
         </div>
-        <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6 shadow-sm">
+        <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6 shadow-sm relative">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8]">Active Violations</span>
+            <div className="flex items-center gap-1.5 group">
+              <span className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8]">Active Violations</span>
+              <Info className="size-4 text-[#6b7280] dark:text-[#94a3b8] cursor-help" />
+              <div className="invisible group-hover:visible absolute left-6 top-12 w-64 bg-[#111827] dark:bg-[#1a2d47] text-white dark:text-[#e8eef5] text-xs rounded-lg px-3 py-2 shadow-lg z-50 border border-transparent dark:border-[rgba(59,130,246,0.15)]">
+                Number of open parking violations that are currently pending review or awaiting action
+              </div>
+            </div>
             <XCircle className="size-5 text-[#dc2626] dark:text-[#f87171]" />
           </div>
           <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">{violationsCount}</p>

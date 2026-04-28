@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, Filter, Info } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/app/components/ui/tooltip";
 
 const mockZones = [
   {
@@ -121,33 +122,73 @@ export default function ZoneList() {
         <div className="px-8 mb-6">
           <div className="grid grid-cols-4 gap-5">
             <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
-              <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8] mb-1">
-                Total Zones
-              </p>
+              <div className="flex items-center gap-1.5 mb-1">
+                <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8]">
+                  Total Zones
+                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="size-3.5 text-[#9ca3af] dark:text-[#6b7280] cursor-pointer hover:text-[#3b82f6] dark:hover:text-[#60a5fa] transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[220px] text-center">
+                    The total number of parking zones across all sites, including active and inactive zones.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">
                 {totalZones}
               </p>
             </div>
             <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
-              <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8] mb-1">
-                Total Vehicle Capacity
-              </p>
+              <div className="flex items-center gap-1.5 mb-1">
+                <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8]">
+                  Total Vehicle Capacity
+                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="size-3.5 text-[#9ca3af] dark:text-[#6b7280] cursor-pointer hover:text-[#3b82f6] dark:hover:text-[#60a5fa] transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[220px] text-center">
+                    The maximum number of vehicles that can be accommodated across all zones combined.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">
                 {totalVehicleCapacity}
               </p>
             </div>
             <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
-              <p className="font-['Inter'] font-normal text-[13px] text-[#dc2626] dark:text-[#f87171] mb-1">
-                Active Violations
-              </p>
+              <div className="flex items-center gap-1.5 mb-1">
+                <p className="font-['Inter'] font-normal text-[13px] text-[#dc2626] dark:text-[#f87171]">
+                  Active Violations
+                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="size-3.5 text-[#dc2626] dark:text-[#f87171] cursor-pointer hover:opacity-70 transition-opacity" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[220px] text-center">
+                    The number of parking violations currently in progress or unresolved across all zones.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#dc2626] dark:text-[#f87171]">
                 {activeViolations}
               </p>
             </div>
             <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
-              <p className="font-['Inter'] font-normal text-[13px] text-[#3b82f6] dark:text-[#60a5fa] mb-1">
-                Policy Coverage
-              </p>
+              <div className="flex items-center gap-1.5 mb-1">
+                <p className="font-['Inter'] font-normal text-[13px] text-[#3b82f6] dark:text-[#60a5fa]">
+                  Policy Coverage
+                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="size-3.5 text-[#3b82f6] dark:text-[#60a5fa] cursor-pointer hover:opacity-70 transition-opacity" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[220px] text-center">
+                    The number of zones that have at least one parking policy assigned out of total zones.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#3b82f6] dark:text-[#60a5fa]">
                 {policyCoverage}/{totalZones}
               </p>

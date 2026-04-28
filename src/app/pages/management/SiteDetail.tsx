@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router";
-import { Edit, ArrowLeft } from "lucide-react";
+import { Edit, ArrowLeft, Info } from "lucide-react";
 import EditSiteModal from "../../components/modals/EditSiteModal";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/app/components/ui/tooltip";
 
 const mockZones = [
   {
@@ -151,25 +152,55 @@ export default function SiteDetail() {
       <div className="px-8 mb-6">
         <div className="grid grid-cols-3 gap-5">
           <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
-            <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8] mb-1">
-              Total Zones
-            </p>
+            <div className="flex items-center gap-1.5 mb-1">
+              <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8]">
+                Total Zones
+              </p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="size-3.5 text-[#9ca3af] dark:text-[#6b7280] cursor-pointer hover:text-[#3b82f6] dark:hover:text-[#60a5fa] transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px] text-center">
+                  The total number of parking zones configured within this site.
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">
               {filteredZones.length}
             </p>
           </div>
           <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
-            <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8] mb-1">
-              Total Parking Lots
-            </p>
+            <div className="flex items-center gap-1.5 mb-1">
+              <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8]">
+                Total Parking Lots
+              </p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="size-3.5 text-[#9ca3af] dark:text-[#6b7280] cursor-pointer hover:text-[#3b82f6] dark:hover:text-[#60a5fa] transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px] text-center">
+                  The total number of individual parking lots across all zones in this site.
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">
               {filteredZones.reduce((sum, zone) => sum + zone.parkingLots, 0)}
             </p>
           </div>
           <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
-            <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8] mb-1">
-              Total Parking Capacity
-            </p>
+            <div className="flex items-center gap-1.5 mb-1">
+              <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8]">
+                Total Parking Capacity
+              </p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="size-3.5 text-[#9ca3af] dark:text-[#6b7280] cursor-pointer hover:text-[#3b82f6] dark:hover:text-[#60a5fa] transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px] text-center">
+                  The maximum number of vehicles this site can accommodate across all its zones.
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">
               {filteredZones.reduce((sum, zone) => sum + zone.capacity, 0)}
             </p>
