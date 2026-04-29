@@ -1,4 +1,4 @@
-import { Car, Clock, X, Play, AlertTriangle, Info } from "lucide-react";
+import { Car, Clock, X, Play, AlertTriangle, Info, Search } from "lucide-react";
 import { useState } from "react";
 
 const liveVehicles = [
@@ -18,7 +18,7 @@ const liveVehicles = [
     zone: "Zone A — Permit Holders Only",
     lot: "Lot 2 — North Structure",
     violation: "Overstay",
-    violationDetail: "Vehicle exceeded 2-hour parking limit by 45 minutes. Violation recorded at 14:23:41."
+    violationDetail: "Vehicle exceeded 2-hour parking limit by 45 minutes. Violation recorded at 14:23:41.",
   },
   {
     id: 2,
@@ -36,7 +36,7 @@ const liveVehicles = [
     zone: "Zone B — General Public Parking",
     lot: "Bruin Lot East — Surface",
     violation: null,
-    violationDetail: null
+    violationDetail: null,
   },
   {
     id: 3,
@@ -54,7 +54,7 @@ const liveVehicles = [
     zone: "Zone C — Faculty & Staff Reserved",
     lot: "Lot 8 — Visitor Overflow",
     violation: "No Permit",
-    violationDetail: "Vehicle parked in faculty zone without required permit. Citation issued."
+    violationDetail: "Vehicle parked in faculty zone without required permit. Citation issued.",
   },
   {
     id: 4,
@@ -72,7 +72,7 @@ const liveVehicles = [
     zone: "Zone D — Short-Term Visitor (2-Hour)",
     lot: "Faculty Lot 17 — West",
     violation: null,
-    violationDetail: null
+    violationDetail: null,
   },
   {
     id: 5,
@@ -90,7 +90,7 @@ const liveVehicles = [
     zone: "Zone E — EV Charging Stations",
     lot: "EV Priority Lot 32",
     violation: null,
-    violationDetail: null
+    violationDetail: null,
   },
   {
     id: 6,
@@ -108,7 +108,7 @@ const liveVehicles = [
     zone: "Zone F — Accessible Parking (ADA)",
     lot: "Structure P6 — Level B1",
     violation: null,
-    violationDetail: null
+    violationDetail: null,
   },
   {
     id: 7,
@@ -126,7 +126,7 @@ const liveVehicles = [
     zone: "Zone G — Event Day Overflow",
     lot: "Lot 2 — North Structure",
     violation: "Expired Meter",
-    violationDetail: "Parking meter expired 1 hour ago. No payment extension detected."
+    violationDetail: "Parking meter expired 1 hour ago. No payment extension detected.",
   },
   {
     id: 8,
@@ -144,7 +144,7 @@ const liveVehicles = [
     zone: "Zone B — General Public Parking",
     lot: "Bruin Lot East — Surface",
     violation: null,
-    violationDetail: null
+    violationDetail: null,
   },
   {
     id: 9,
@@ -162,7 +162,7 @@ const liveVehicles = [
     zone: "Zone C — Faculty & Staff Reserved",
     lot: "Lot 8 — Visitor Overflow",
     violation: null,
-    violationDetail: null
+    violationDetail: null,
   },
   {
     id: 10,
@@ -180,7 +180,7 @@ const liveVehicles = [
     zone: "Zone D — Short-Term Visitor (2-Hour)",
     lot: "Faculty Lot 17 — West",
     violation: "Wrong Zone",
-    violationDetail: "Vehicle parked in visitor zone with invalid zone permit. Violation detected."
+    violationDetail: "Vehicle parked in visitor zone with invalid zone permit. Violation detected.",
   },
   {
     id: 11,
@@ -198,7 +198,7 @@ const liveVehicles = [
     zone: "Zone E — EV Charging Stations",
     lot: "EV Priority Lot 32",
     violation: null,
-    violationDetail: null
+    violationDetail: null,
   },
   {
     id: 12,
@@ -216,13 +216,55 @@ const liveVehicles = [
     zone: "Zone H — Motorcycle & Bicycle",
     lot: "Structure P6 — Level B1",
     violation: null,
-    violationDetail: null
+    violationDetail: null,
   },
 ];
+
+type ViolationFilter = "All" | "With Violation" | "No Violation" | "Overstay" | "No Permit" | "Expired Meter" | "Wrong Zone";
+type DirectionFilter = "All" | "Approaching" | "Moving away";
+type SiteFilter = "All Sites" | "UCLA" | "Stanford" | "U of Michigan" | "UT Austin" | "Harvard";
+
+const SITE_OPTIONS: SiteFilter[] = ["All Sites", "UCLA", "Stanford", "U of Michigan", "UT Austin", "Harvard"];
+const DIRECTION_OPTIONS: DirectionFilter[] = ["All", "Approaching", "Moving away"];
+const VIOLATION_OPTIONS: ViolationFilter[] = ["All", "With Violation", "No Violation", "Overstay", "No Permit", "Expired Meter", "Wrong Zone"];
 
 export default function LiveOperations() {
   const [selectedVehicle, setSelectedVehicle] = useState<typeof liveVehicles[0] | null>(null);
   const [activeTab, setActiveTab] = useState<"image" | "video">("image");
+
+  // Filter state
+  const [search,          setSearch]          = useState("");
+  const [siteFilter,      setSiteFilter]      = useState<SiteFilter>("All Sites");
+  const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("All");
+  const [violationFilter, setViolationFilter] = useState<ViolationFilter>("All");
+
+  const filtered = liveVehicles.filter((v) => {
+    if (search) {
+      const q = search.toLowerCase();
+      if (!v.plate.toLowerCase().includes(q) && !v.makeModel.toLowerCase().includes(q)) return false;
+    }
+    if (siteFilter !== "All Sites" && v.site !== siteFilter) return false;
+    if (directionFilter !== "All" && v.direction !== directionFilter) return false;
+    if (violationFilter === "With Violation" && !v.violation) return false;
+    if (violationFilter === "No Violation"   &&  v.violation) return false;
+    if (["Overstay", "No Permit", "Expired Meter", "Wrong Zone"].includes(violationFilter) && v.violation !== violationFilter) return false;
+    return true;
+  });
+
+  const hasActiveFilters =
+    search !== "" ||
+    siteFilter !== "All Sites" ||
+    directionFilter !== "All" ||
+    violationFilter !== "All";
+
+  function clearFilters() {
+    setSearch("");
+    setSiteFilter("All Sites");
+    setDirectionFilter("All");
+    setViolationFilter("All");
+  }
+
+  const selectCls = "px-4 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg bg-white dark:bg-[#0f1f35] text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]";
 
   return (
     <div className="flex-1 overflow-auto bg-[#eff6ff] dark:bg-[#0a1628] pb-6">
@@ -258,90 +300,156 @@ export default function LiveOperations() {
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="px-8 mb-4">
+        <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-4 flex flex-wrap gap-3 items-center shadow-sm">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#9ca3af]" />
+            <input
+              type="text"
+              placeholder="Search by plate or make / model…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.2)] rounded-lg bg-transparent text-[#111827] dark:text-[#e8eef5] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+            />
+          </div>
+
+          {/* Site */}
+          <select
+            value={siteFilter}
+            onChange={(e) => setSiteFilter(e.target.value as SiteFilter)}
+            className={selectCls}
+          >
+            {SITE_OPTIONS.map((o) => <option key={o}>{o}</option>)}
+          </select>
+
+          {/* Direction */}
+          <select
+            value={directionFilter}
+            onChange={(e) => setDirectionFilter(e.target.value as DirectionFilter)}
+            className={selectCls}
+          >
+            {DIRECTION_OPTIONS.map((o) => (
+              <option key={o} value={o}>{o === "All" ? "All Directions" : o}</option>
+            ))}
+          </select>
+
+          {/* Violation */}
+          <select
+            value={violationFilter}
+            onChange={(e) => setViolationFilter(e.target.value as ViolationFilter)}
+            className={selectCls}
+          >
+            {VIOLATION_OPTIONS.map((o) => (
+              <option key={o} value={o}>{o === "All" ? "All Violations" : o}</option>
+            ))}
+          </select>
+
+          {/* Clear */}
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium text-[#6b7280] dark:text-[#94a3b8] hover:text-[#111827] dark:hover:text-[#e8eef5] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors"
+            >
+              <X className="size-3.5" />
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Live Events Table */}
       <div className="px-8">
         <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
+          <div className="px-6 py-4 border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] flex items-center justify-between">
             <h2 className="font-['Inter'] font-semibold text-[18px] text-[#111827] dark:text-[#e8eef5]">
               Live Vehicle Events
             </h2>
+            <span className="text-[13px] text-[#6b7280] dark:text-[#94a3b8]">
+              {filtered.length === liveVehicles.length
+                ? `${liveVehicles.length} events`
+                : `${filtered.length} of ${liveVehicles.length} events`}
+            </span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-[#f9fafb] dark:bg-[#0a1628] border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-                  <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                    Event time
-                  </th>
-                  <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                    License plate
-                  </th>
-                  <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                    Make / Model
-                  </th>
-                  <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                    Vehicle color
-                  </th>
-                  <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                    Enforcement Vehicle
-                  </th>
-                  <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                    Location
-                  </th>
-                  <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                    Direction
-                  </th>
+                  {["Event time", "License plate", "Make / Model", "Vehicle color", "Enforcement Vehicle", "Location", "Direction", "Violation"].map((col) => (
+                    <th key={col} className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8] whitespace-nowrap">
+                      {col}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {liveVehicles.map((vehicle) => (
-                  <tr
-                    key={vehicle.id}
-                    onClick={() => setSelectedVehicle(vehicle)}
-                    className="border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors cursor-pointer"
-                  >
-                    <td className="px-6 py-4 text-[14px] text-[#6b7280] dark:text-[#94a3b8]">
-                      {vehicle.eventTime}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="font-['Inter'] font-semibold text-[14px] text-[#3b82f6] dark:text-[#60a5fa]">
-                        {vehicle.plate}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-[14px] text-[#111827] dark:text-[#e8eef5]">
-                      {vehicle.makeModel}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className={`size-3 rounded-full ${
-                          vehicle.vehicleColor.includes("Blue") ? "bg-[#3b82f6]" :
-                          vehicle.vehicleColor.includes("Silver") || vehicle.vehicleColor.includes("Gray") ? "bg-[#94a3b8]" :
-                          vehicle.vehicleColor.includes("Black") ? "bg-[#111827]" :
-                          vehicle.vehicleColor.includes("Red") || vehicle.vehicleColor.includes("Orange") ? "bg-[#ef4444]" :
-                          vehicle.vehicleColor.includes("White") ? "bg-[#f3f4f6] border border-[#e5e7eb]" :
-                          "bg-[#16a34a]"
-                        }`} />
-                        <span className="text-[14px] text-[#111827] dark:text-[#e8eef5]">
-                          {vehicle.vehicleColor}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-[14px] text-[#111827] dark:text-[#e8eef5]">
-                      {vehicle.enforcementVehicle}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-[13px] space-y-0.5">
-                        <div className="text-[#111827] dark:text-[#e8eef5] font-medium">{vehicle.site}</div>
-                        <div className="text-[#6b7280] dark:text-[#94a3b8]">{vehicle.zone}</div>
-                        <div className="text-[#6b7280] dark:text-[#94a3b8]">{vehicle.lot}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-[14px] text-[#111827] dark:text-[#e8eef5]">
-                      {vehicle.direction}
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-12 text-center text-[14px] text-[#6b7280] dark:text-[#94a3b8]">
+                      No events match the current filters.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filtered.map((vehicle) => (
+                    <tr
+                      key={vehicle.id}
+                      onClick={() => setSelectedVehicle(vehicle)}
+                      className="border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors cursor-pointer"
+                    >
+                      <td className="px-6 py-4 text-[14px] text-[#6b7280] dark:text-[#94a3b8] whitespace-nowrap">
+                        {vehicle.eventTime}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-['Inter'] font-semibold text-[14px] text-[#3b82f6] dark:text-[#60a5fa]">
+                          {vehicle.plate}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-[14px] text-[#111827] dark:text-[#e8eef5] whitespace-nowrap">
+                        {vehicle.makeModel}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className={`size-3 rounded-full flex-shrink-0 ${
+                            vehicle.vehicleColor.includes("Blue")                                        ? "bg-[#3b82f6]" :
+                            vehicle.vehicleColor.includes("Silver") || vehicle.vehicleColor.includes("Gray") ? "bg-[#94a3b8]" :
+                            vehicle.vehicleColor.includes("Black")                                       ? "bg-[#111827]" :
+                            vehicle.vehicleColor.includes("Red") || vehicle.vehicleColor.includes("Orange") ? "bg-[#ef4444]" :
+                            vehicle.vehicleColor.includes("White")                                       ? "bg-[#f3f4f6] border border-[#e5e7eb]" :
+                            "bg-[#16a34a]"
+                          }`} />
+                          <span className="text-[14px] text-[#111827] dark:text-[#e8eef5] whitespace-nowrap">
+                            {vehicle.vehicleColor}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-[14px] text-[#111827] dark:text-[#e8eef5] whitespace-nowrap">
+                        {vehicle.enforcementVehicle}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-[13px] space-y-0.5">
+                          <div className="text-[#111827] dark:text-[#e8eef5] font-medium">{vehicle.site}</div>
+                          <div className="text-[#6b7280] dark:text-[#94a3b8]">{vehicle.zone}</div>
+                          <div className="text-[#6b7280] dark:text-[#94a3b8]">{vehicle.lot}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-[14px] text-[#111827] dark:text-[#e8eef5] whitespace-nowrap">
+                        {vehicle.direction}
+                      </td>
+                      <td className="px-6 py-4">
+                        {vehicle.violation ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-medium bg-[#fee2e2] text-[#991b1b] dark:bg-[#450a0a] dark:text-[#fca5a5] whitespace-nowrap">
+                            <AlertTriangle className="size-3" />
+                            {vehicle.violation}
+                          </span>
+                        ) : (
+                          <span className="text-[13px] text-[#9ca3af] dark:text-[#4b5563]">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -350,8 +458,14 @@ export default function LiveOperations() {
 
       {/* Vehicle Detail Modal */}
       {selectedVehicle && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => { setSelectedVehicle(null); setActiveTab("image"); }}>
-          <div className="bg-white dark:bg-[#0f1f35] rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={() => { setSelectedVehicle(null); setActiveTab("image"); }}
+        >
+          <div
+            className="bg-white dark:bg-[#0f1f35] rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="sticky top-0 bg-white dark:bg-[#0f1f35] border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6 z-10">
               <div className="flex items-center justify-between">
                 <div>
@@ -403,7 +517,10 @@ export default function LiveOperations() {
                     <label className="block font-['Inter'] text-[14px] font-medium text-[#111827] dark:text-[#e8eef5]">
                       Captured Image
                     </label>
-                    <button onClick={() => setActiveTab("video")} className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-[#3b82f6] dark:text-[#60a5fa] border border-[#3b82f6] dark:border-[#60a5fa] rounded-lg hover:bg-[#3b82f6] hover:text-white dark:hover:bg-[#60a5fa] dark:hover:text-[#0a1628] transition-colors">
+                    <button
+                      onClick={() => setActiveTab("video")}
+                      className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-[#3b82f6] dark:text-[#60a5fa] border border-[#3b82f6] dark:border-[#60a5fa] rounded-lg hover:bg-[#3b82f6] hover:text-white dark:hover:bg-[#60a5fa] dark:hover:text-[#0a1628] transition-colors"
+                    >
                       <Play className="size-4" />
                       Playback Video
                     </button>
@@ -479,7 +596,7 @@ export default function LiveOperations() {
                   </h3>
                   <div className="p-4 bg-[#fee2e2] dark:bg-[#7f1d1d] rounded-lg border border-[#dc2626] dark:border-[#f87171]">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 bg-[#dc2626] rounded-lg">
+                      <div className="p-2 bg-[#dc2626] rounded-lg flex-shrink-0">
                         <AlertTriangle className="size-5 text-white" />
                       </div>
                       <div className="flex-1">
@@ -497,46 +614,25 @@ export default function LiveOperations() {
                   Vehicle Information
                 </h3>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between py-3 border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-                    <label className="font-['Inter'] text-[14px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                      License Plate
-                    </label>
-                    <p className="font-['Inter'] text-[16px] font-semibold text-[#111827] dark:text-[#e8eef5]">
-                      {selectedVehicle.plate}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between py-3 border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-                    <label className="font-['Inter'] text-[14px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                      Make & Model
-                    </label>
-                    <p className="font-['Inter'] text-[16px] font-semibold text-[#111827] dark:text-[#e8eef5]">
-                      {selectedVehicle.makeModel}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between py-3 border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-                    <label className="font-['Inter'] text-[14px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                      Vehicle Color
-                    </label>
-                    <p className="font-['Inter'] text-[16px] font-semibold text-[#111827] dark:text-[#e8eef5]">
-                      {selectedVehicle.vehicleColor}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between py-3 border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-                    <label className="font-['Inter'] text-[14px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                      Category
-                    </label>
-                    <p className="font-['Inter'] text-[16px] font-semibold text-[#111827] dark:text-[#e8eef5]">
-                      {selectedVehicle.category}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between py-3">
-                    <label className="font-['Inter'] text-[14px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                      Event Time
-                    </label>
-                    <p className="font-['Inter'] text-[16px] font-semibold text-[#111827] dark:text-[#e8eef5]">
-                      {selectedVehicle.eventTime}
-                    </p>
-                  </div>
+                  {[
+                    { label: "License Plate", value: selectedVehicle.plate },
+                    { label: "Make & Model",  value: selectedVehicle.makeModel },
+                    { label: "Vehicle Color", value: selectedVehicle.vehicleColor },
+                    { label: "Category",      value: selectedVehicle.category },
+                    { label: "Event Time",    value: selectedVehicle.eventTime },
+                  ].map((row, i, arr) => (
+                    <div
+                      key={row.label}
+                      className={`flex items-center justify-between py-3 ${i < arr.length - 1 ? "border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]" : ""}`}
+                    >
+                      <label className="font-['Inter'] text-[14px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
+                        {row.label}
+                      </label>
+                      <p className="font-['Inter'] text-[16px] font-semibold text-[#111827] dark:text-[#e8eef5]">
+                        {row.value}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
 

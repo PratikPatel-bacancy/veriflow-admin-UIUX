@@ -16,11 +16,10 @@ import {
   AlertTriangle,
   Download,
   ChevronDown,
-  FileText,
-  CalendarClock,
   AlertCircle,
   Search,
-  Info,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 // ── Template meta (icon + color) ─────────────────────────────────────────────
@@ -227,7 +226,6 @@ const STATUS_STYLES: Record<string, string> = {
   Archived:  "bg-[#fef3c7] dark:bg-[#78350f] text-[#92400e] dark:text-[#fbbf24]",
 };
 
-const ROW_ACTIONS = ["Edit", "Duplicate", "View Detail", "Archive"];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -278,36 +276,6 @@ export default function PolicyAssignments() {
     setSelectedRows(next);
   };
 
-  const kpis = [
-    {
-      label: "Total Assignments",
-      value: ASSIGNMENTS.length,
-      icon: <FileText className="size-5 text-[#3b82f6] dark:text-[#60a5fa]" />,
-      iconBg: "bg-[#dbeafe] dark:bg-[#1e3a8a]",
-      tooltip: "Total number of policy assignments across all sites, zones, stalls, and levels — includes active, scheduled, draft, and archived records.",
-    },
-    {
-      label: "Active",
-      value: ASSIGNMENTS.filter((a) => a.status === "Active").length,
-      icon: <CheckSquare className="size-5 text-[#16a34a] dark:text-[#6ee7b7]" />,
-      iconBg: "bg-[#d1fae5] dark:bg-[#065f46]",
-      tooltip: "Assignments currently in effect and being enforced. These policies are evaluated in real-time against parking events at their assigned targets.",
-    },
-    {
-      label: "Scheduled",
-      value: ASSIGNMENTS.filter((a) => a.status === "Scheduled").length,
-      icon: <CalendarClock className="size-5 text-[#ea580c] dark:text-[#fb923c]" />,
-      iconBg: "bg-[#ffedd5] dark:bg-[#7c2d12]",
-      tooltip: "Assignments configured and approved but not yet in effect. They will activate automatically on their scheduled effective-from date and time.",
-    },
-    {
-      label: "Conflicts",
-      value: ASSIGNMENTS.filter((a) => a.conflict).length,
-      icon: <AlertTriangle className="size-5 text-[#dc2626] dark:text-[#f87171]" />,
-      iconBg: "bg-[#fee2e2] dark:bg-[#7f1d1d]",
-      tooltip: "Assignments that overlap with another policy on the same target during the same time window. The higher-priority assignment wins; review each conflict to confirm intended behaviour.",
-    },
-  ];
 
   return (
     <div className="flex-1 overflow-auto bg-[#eff6ff] dark:bg-[#0a1628] pb-8">
@@ -331,94 +299,53 @@ export default function PolicyAssignments() {
         </button>
       </div>
 
-      {/* ── KPI Row ── */}
-      <div className="px-8 pt-6">
-        <div className="grid grid-cols-4 gap-5">
-          {kpis.map(({ label, value, icon, iconBg, tooltip }) => (
-            <div
-              key={label}
-              className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm relative"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className={`${iconBg} rounded-lg p-2.5`}>{icon}</div>
-                <div className="group relative">
-                  <Info className="size-4 text-[#6b7280] dark:text-[#94a3b8] cursor-help" />
-                  <div className="invisible group-hover:visible absolute right-0 top-6 w-64 bg-[#111827] dark:bg-[#1a2d47] text-white dark:text-[#e8eef5] text-xs rounded-lg px-3 py-2 shadow-lg z-50 border border-transparent dark:border-[rgba(59,130,246,0.15)] leading-relaxed">
-                    {tooltip}
-                  </div>
-                </div>
-              </div>
-              <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">
-                {value}
-              </p>
-              <p className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8] mt-1">{label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* ── Filter Bar ── */}
       <div className="px-8 pt-5">
-        <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-4 shadow-sm space-y-3">
-          {/* Status chips */}
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-4 shadow-sm flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#9ca3af]" />
+            <input
+              type="text"
+              placeholder="Search assignments or targets…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.2)] rounded-lg bg-transparent text-[#111827] dark:text-[#e8eef5] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg bg-white dark:bg-[#0f1f35] text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+          >
             {STATUS_FILTERS.map((f) => (
-              <button
-                key={f}
-                onClick={() => setStatusFilter(f)}
-                className={`px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors ${
-                  statusFilter === f
-                    ? "bg-[#3b82f6] text-white"
-                    : "bg-[#f3f4f6] dark:bg-[#1a2d47] text-[#374151] dark:text-[#94a3b8] hover:bg-[#e5e7eb] dark:hover:bg-[rgba(30,58,95,0.7)]"
-                }`}
-              >
-                {f}
-              </button>
+              <option key={f} value={f}>{f === "All" ? "All Statuses" : f}</option>
             ))}
-          </div>
-
-          {/* Dropdowns + Search */}
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#6b7280] dark:text-[#94a3b8]" />
-              <input
-                type="text"
-                placeholder="Search assignments or targets…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-[#f9fafb] dark:bg-[#0a1628] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg pl-9 pr-4 py-1.5 text-sm text-[#111827] dark:text-[#e8eef5] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
-              />
-            </div>
-
-            <select
-              value={templateFilter}
-              onChange={(e) => setTemplateFilter(e.target.value)}
-              className="bg-[#f9fafb] dark:bg-[#0a1628] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg px-3 py-1.5 text-sm text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
-            >
-              <option value="all">Template: All</option>
-              {TEMPLATES_LIST.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-
-            <select
-              value={targetTypeFilter}
-              onChange={(e) => setTargetTypeFilter(e.target.value)}
-              className="bg-[#f9fafb] dark:bg-[#0a1628] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg px-3 py-1.5 text-sm text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
-            >
-              {TARGET_TYPES.map((t) => (
-                <option key={t} value={t}>{t === "All" ? "Target Type: All" : t}</option>
-              ))}
-            </select>
-
-            <select
-              value={siteFilter}
-              onChange={(e) => setSiteFilter(e.target.value)}
-              className="bg-[#f9fafb] dark:bg-[#0a1628] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg px-3 py-1.5 text-sm text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
-            >
-              <option value="all">Site: All</option>
-              {SITES_LIST.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
+          </select>
+          <select
+            value={templateFilter}
+            onChange={(e) => setTemplateFilter(e.target.value)}
+            className="px-4 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg bg-white dark:bg-[#0f1f35] text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+          >
+            <option value="all">All Templates</option>
+            {TEMPLATES_LIST.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <select
+            value={targetTypeFilter}
+            onChange={(e) => setTargetTypeFilter(e.target.value)}
+            className="px-4 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg bg-white dark:bg-[#0f1f35] text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+          >
+            {TARGET_TYPES.map((t) => (
+              <option key={t} value={t}>{t === "All" ? "All Target Types" : t}</option>
+            ))}
+          </select>
+          <select
+            value={siteFilter}
+            onChange={(e) => setSiteFilter(e.target.value)}
+            className="px-4 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg bg-white dark:bg-[#0f1f35] text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+          >
+            <option value="all">All Sites</option>
+            {SITES_LIST.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
         </div>
       </div>
 
@@ -436,7 +363,7 @@ export default function PolicyAssignments() {
                         : <Square className="size-4 text-[#6b7280] dark:text-[#94a3b8]" />}
                     </button>
                   </th>
-                  {["Assignment Name", "Template", "Target", "Time Window", "Effective Dates", "Priority", "Status", ""].map((h) => (
+                  {["Assignment Name", "Template", "Target", "Time Window", "Effective Dates", "Status", ""].map((h) => (
                     <th
                       key={h}
                       className="text-left px-4 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8] uppercase tracking-wider whitespace-nowrap"
@@ -538,23 +465,6 @@ export default function PolicyAssignments() {
                           </div>
                         </td>
 
-                        {/* Priority */}
-                        <td className="px-4 py-4">
-                          <div className="flex items-center gap-1.5">
-                            <div
-                              className="h-1.5 rounded-full bg-[#e5e7eb] dark:bg-[#1a2d47] w-16 overflow-hidden"
-                            >
-                              <div
-                                className="h-full rounded-full bg-[#3b82f6] dark:bg-[#60a5fa]"
-                                style={{ width: `${a.priority}%` }}
-                              />
-                            </div>
-                            <span className="text-[13px] font-semibold text-[#111827] dark:text-[#e8eef5]">
-                              {a.priority}
-                            </span>
-                          </div>
-                        </td>
-
                         {/* Status */}
                         <td className="px-4 py-4">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[a.status] ?? STATUS_STYLES.Draft}`}>
@@ -562,31 +472,37 @@ export default function PolicyAssignments() {
                           </span>
                         </td>
 
-                        {/* Row menu */}
-                        <td className="px-4 py-4 relative">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setOpenRowMenu(menuOpen ? null : a.id); }}
-                            className="p-1.5 rounded-lg hover:bg-[#f3f4f6] dark:hover:bg-[rgba(30,58,95,0.7)] transition-colors"
-                          >
-                            <MoreHorizontal className="size-4 text-[#6b7280] dark:text-[#94a3b8]" />
-                          </button>
-                          {menuOpen && (
-                            <div className="absolute right-6 top-10 w-44 bg-white dark:bg-[#0f1f35] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg shadow-xl z-50 py-1">
-                              {ROW_ACTIONS.map((opt) => (
-                                <button
-                                  key={opt}
-                                  onClick={(e) => { e.stopPropagation(); setOpenRowMenu(null); }}
-                                  className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                                    opt === "Archive"
-                                      ? "text-[#dc2626] dark:text-[#f87171] hover:bg-[#fee2e2] dark:hover:bg-[#7f1d1d]"
-                                      : "text-[#111827] dark:text-[#e8eef5] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)]"
-                                  }`}
-                                >
-                                  {opt}
-                                </button>
-                              ))}
+                        {/* Row actions */}
+                        <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1">
+                            <button className="p-1.5 rounded-lg hover:bg-[#eff6ff] dark:hover:bg-[rgba(59,130,246,0.1)] transition-colors" title="Edit">
+                              <Pencil className="size-3.5 text-[#3b82f6] dark:text-[#60a5fa]" />
+                            </button>
+                            <button className="p-1.5 rounded-lg hover:bg-[#fee2e2] dark:hover:bg-[#7f1d1d] transition-colors" title="Archive">
+                              <Trash2 className="size-3.5 text-[#ef4444] dark:text-[#f87171]" />
+                            </button>
+                            <div className="relative">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setOpenRowMenu(menuOpen ? null : a.id); }}
+                                className="p-1.5 rounded-lg hover:bg-[#f3f4f6] dark:hover:bg-[rgba(30,58,95,0.7)] transition-colors"
+                              >
+                                <MoreHorizontal className="size-4 text-[#6b7280] dark:text-[#94a3b8]" />
+                              </button>
+                              {menuOpen && (
+                                <div className="absolute right-0 top-8 w-44 bg-white dark:bg-[#0f1f35] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg shadow-xl z-50 py-1">
+                                  {["Duplicate", "View Detail"].map((opt) => (
+                                    <button
+                                      key={opt}
+                                      onClick={(e) => { e.stopPropagation(); setOpenRowMenu(null); }}
+                                      className="w-full text-left px-4 py-2 text-sm text-[#111827] dark:text-[#e8eef5] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors"
+                                    >
+                                      {opt}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </td>
                       </tr>
 
@@ -596,7 +512,7 @@ export default function PolicyAssignments() {
                           key={`conflict-${a.id}`}
                           className="bg-[#fffbeb] dark:bg-[#78350f]/20 border-b border-[#fbbf24]/30"
                         >
-                          <td colSpan={9} className="px-8 py-3">
+                          <td colSpan={8} className="px-8 py-3">
                             <div className="flex items-start gap-2.5">
                               <AlertCircle className="size-4 text-[#d97706] dark:text-[#fbbf24] flex-shrink-0 mt-0.5" />
                               <div>
@@ -617,7 +533,7 @@ export default function PolicyAssignments() {
 
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="px-6 py-16 text-center">
+                    <td colSpan={8} className="px-6 py-16 text-center">
                       <Search className="size-10 text-[#d1d5db] dark:text-[#374151] mx-auto mb-3" />
                       <p className="text-[14px] font-medium text-[#6b7280] dark:text-[#94a3b8]">No assignments match your filters</p>
                       <p className="text-[12px] text-[#9ca3af] dark:text-[#6b7280] mt-1">Try adjusting the status, template, or site filters</p>

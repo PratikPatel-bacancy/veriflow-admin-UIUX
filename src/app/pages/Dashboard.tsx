@@ -176,7 +176,10 @@ export default function Dashboard() {
       <div className="px-8 pt-6 mb-6">
         <div className="grid grid-cols-4 gap-5">
           {/* Active Events */}
-          <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm relative">
+          <Link
+            to="/operations/live"
+            className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm relative hover:border-[#3b82f6] dark:hover:border-[#60a5fa] transition-colors cursor-pointer block"
+          >
             <div className="flex items-start justify-between mb-3">
               <div className="bg-[#dbeafe] dark:bg-[#1e3a8a] rounded-lg p-2.5">
                 <Activity
@@ -200,10 +203,13 @@ export default function Dashboard() {
                 1,234
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Violations Today */}
-          <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm relative">
+          <Link
+            to="/operations/violations"
+            className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm relative hover:border-[#3b82f6] dark:hover:border-[#60a5fa] transition-colors cursor-pointer block"
+          >
             <div className="flex items-start justify-between mb-3">
               <div className="bg-[#fee2e2] dark:bg-[#7f1d1d] rounded-lg p-2.5">
                 <AlertTriangle
@@ -227,10 +233,13 @@ export default function Dashboard() {
                 293
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Compliance Rate */}
-          <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm relative">
+          <Link
+            to="/operations/compliance"
+            className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm relative hover:border-[#3b82f6] dark:hover:border-[#60a5fa] transition-colors cursor-pointer block"
+          >
             <div className="flex items-start justify-between mb-3">
               <div className="bg-[#d1fae5] dark:bg-[#065f46] rounded-lg p-2.5">
                 <CheckCircle
@@ -254,7 +263,7 @@ export default function Dashboard() {
                 76.25%
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Revenue Today */}
 
@@ -792,13 +801,6 @@ export default function Dashboard() {
                   onMouseEnter={() => setHoveredPin(pin.site)}
                   onMouseLeave={() => setHoveredPin(null)}
                 >
-                  {/* Pulse ring on violation/warning */}
-                  {(aggStatus === "violation" || aggStatus === "warning") && (
-                    <div
-                      style={{ backgroundColor: STALL_CLR[aggStatus] }}
-                      className="absolute -inset-1.5 rounded-full opacity-30 animate-ping"
-                    />
-                  )}
                   {/* Pin dot */}
                   <div
                     style={{ backgroundColor: STALL_CLR[aggStatus] }}
@@ -1022,7 +1024,7 @@ export default function Dashboard() {
       </div>
 
       {/* Revenue Chart - Full Width */}
-      <div className="px-8 mb-6">
+      {/* <div className="px-8 mb-6">
         <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6 shadow-sm">
           <h2 className="font-sans font-semibold text-[16px] text-[#111827] dark:text-[#e8eef5] mb-4">Revenue (Last 30 days)</h2>
           <div style={{ width: "100%", height: 280 }}>
@@ -1094,7 +1096,7 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Enforcement Vehicles - 2x2 Grid */}
       <div className="px-8 mb-6">

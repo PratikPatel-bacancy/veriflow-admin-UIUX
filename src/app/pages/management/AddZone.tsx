@@ -2,13 +2,21 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { Plus, Edit, Info, Check, ChevronRight, ChevronLeft, Loader2, Trash2 } from "lucide-react";
 
+interface ParkingLotEntry {
+  id: string;
+  name: string;
+  lat: string;
+  lng: string;
+}
+
 interface ZoneFormData {
   id: string;
   zoneName: string;
   zoneType: string;
   policyTemplate: string;
   capacity: string;
-  parkingLots: string;
+  parkingLots: ParkingLotEntry[];
+  parkingLotDraft: { name: string; lat: string; lng: string };
   geometryMethod: "draw" | "import";
   status: string;
   isCollapsed: boolean;
@@ -42,7 +50,8 @@ export default function AddZone() {
       zoneType: "",
       policyTemplate: "",
       capacity: "",
-      parkingLots: "",
+      parkingLots: [],
+      parkingLotDraft: { name: "", lat: "", lng: "" },
       geometryMethod: "draw",
       status: "Active",
       isCollapsed: false
@@ -57,7 +66,8 @@ export default function AddZone() {
       zoneType: "",
       policyTemplate: "",
       capacity: "",
-      parkingLots: "",
+      parkingLots: [],
+      parkingLotDraft: { name: "", lat: "", lng: "" },
       geometryMethod: "draw",
       status: "Active",
       isCollapsed: false
@@ -72,6 +82,13 @@ export default function AddZone() {
   const updateZone = (id: string, field: keyof ZoneFormData, value: any) => {
     setZones(zones.map(z => z.id === id ? { ...z, [field]: value } : z));
   };
+
+  const addParkingLotToZone = (zoneId: string, draft: { name: string; lat: string; lng: string }) =>
+    setZones(zones.map(z =>
+      z.id === zoneId
+        ? { ...z, parkingLots: [...z.parkingLots, { id: `pl-${Date.now()}`, ...draft }], parkingLotDraft: { name: "", lat: "", lng: "" } }
+        : z
+    ));
 
   const toggleZoneCollapse = (id: string) => {
     setZones(zones.map(z => z.id === id ? { ...z, isCollapsed: !z.isCollapsed } : z));
@@ -235,6 +252,7 @@ export default function AddZone() {
                             <span className="font-medium text-[#111827] dark:text-[#e8eef5]">{zone.zoneName}</span>
                             <span className="text-sm text-[#6b7280] dark:text-[#94a3b8]">• {zone.zoneType}</span>
                             {zone.capacity && <span className="text-sm text-[#6b7280] dark:text-[#94a3b8]">• {zone.capacity} capacity</span>}
+                            {zone.parkingLots.length > 0 && <span className="text-sm text-[#6b7280] dark:text-[#94a3b8]">• {zone.parkingLots.length} lot{zone.parkingLots.length > 1 ? "s" : ""}</span>}
                           </div>
                           <div className="flex items-center gap-2">
                             <button
@@ -320,13 +338,91 @@ export default function AddZone() {
                             <label className="block text-sm font-medium text-[#111827] dark:text-[#e8eef5] mb-2">
                               Parking Lots
                             </label>
-                            <input
-                              type="number"
-                              value={zone.parkingLots}
-                              onChange={(e) => updateZone(zone.id, 'parkingLots', e.target.value)}
-                              placeholder="0"
-                              className="w-full bg-white dark:bg-[#1a2d47] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg px-4 py-2 text-sm text-[#111827] dark:text-[#e8eef5] placeholder:text-[#6b7280] dark:placeholder:text-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent"
-                            />
+                            <div className="space-y-3">
+                              <div className="border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg p-4 space-y-3 bg-[#f9fafb] dark:bg-[#0a1628]">
+                                <div>
+                                  <label className="block text-xs font-medium text-[#6b7280] dark:text-[#94a3b8] mb-1.5">Parking Lot Name</label>
+                                  <input
+                                    type="text"
+                                    value={zone.parkingLotDraft.name}
+                                    onChange={(e) => updateZone(zone.id, "parkingLotDraft", { ...zone.parkingLotDraft, name: e.target.value })}
+                                    placeholder="e.g. Level 1 — North Wing"
+                                    className="w-full bg-white dark:bg-[#1a2d47] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg px-4 py-2 text-sm text-[#111827] dark:text-[#e8eef5] placeholder:text-[#6b7280] dark:placeholder:text-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-xs font-medium text-[#6b7280] dark:text-[#94a3b8] mb-1.5">Latitude</label>
+                                    <input
+                                      type="text"
+                                      value={zone.parkingLotDraft.lat}
+                                      onChange={(e) => updateZone(zone.id, "parkingLotDraft", { ...zone.parkingLotDraft, lat: e.target.value })}
+                                      placeholder="e.g. 42.3314"
+                                      className="w-full bg-white dark:bg-[#1a2d47] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg px-4 py-2 text-sm text-[#111827] dark:text-[#e8eef5] placeholder:text-[#6b7280] dark:placeholder:text-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-[#6b7280] dark:text-[#94a3b8] mb-1.5">Longitude</label>
+                                    <input
+                                      type="text"
+                                      value={zone.parkingLotDraft.lng}
+                                      onChange={(e) => updateZone(zone.id, "parkingLotDraft", { ...zone.parkingLotDraft, lng: e.target.value })}
+                                      placeholder="e.g. -83.0458"
+                                      className="w-full bg-white dark:bg-[#1a2d47] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg px-4 py-2 text-sm text-[#111827] dark:text-[#e8eef5] placeholder:text-[#6b7280] dark:placeholder:text-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent"
+                                    />
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  disabled={!zone.parkingLotDraft.name.trim()}
+                                  onClick={() => addParkingLotToZone(zone.id, zone.parkingLotDraft)}
+                                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#3b82f6] text-white text-sm font-medium rounded-lg hover:bg-[#2563eb] disabled:bg-[#e5e7eb] disabled:text-[#9ca3af] disabled:cursor-not-allowed transition-colors"
+                                >
+                                  <Plus className="size-4" /> Add Parking Lot
+                                </button>
+                              </div>
+
+                              {zone.parkingLots.length > 0 && (
+                                <div className="border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg overflow-hidden">
+                                  <div className="flex items-center justify-between px-4 py-2.5 bg-[#eff6ff] dark:bg-[#1e3a5f] border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
+                                    <span className="text-xs font-semibold text-[#2563eb] dark:text-[#60a5fa] uppercase tracking-wide">
+                                      Added Parking Lots
+                                    </span>
+                                    <span className="text-xs font-medium text-[#2563eb] dark:text-[#60a5fa] bg-white dark:bg-[#0f1f35] px-2 py-0.5 rounded-full border border-[#bfdbfe] dark:border-[rgba(59,130,246,0.3)]">
+                                      {zone.parkingLots.length} {zone.parkingLots.length === 1 ? "lot" : "lots"}
+                                    </span>
+                                  </div>
+                                  <div className="divide-y divide-[#e5e7eb] dark:divide-[rgba(59,130,246,0.1)]">
+                                    {zone.parkingLots.map((pl, idx) => (
+                                      <div key={pl.id} className="flex items-center justify-between px-4 py-3 bg-white dark:bg-[#0f1f35] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.4)] transition-colors">
+                                        <div className="flex items-center gap-3">
+                                          <span className="flex-shrink-0 size-6 rounded-full bg-[#dbeafe] dark:bg-[#1e3a8a] text-[#2563eb] dark:text-[#60a5fa] text-xs font-semibold flex items-center justify-center">
+                                            {idx + 1}
+                                          </span>
+                                          <div>
+                                            <p className="text-sm font-medium text-[#111827] dark:text-[#e8eef5]">{pl.name}</p>
+                                            {(pl.lat || pl.lng) ? (
+                                              <p className="text-xs text-[#6b7280] dark:text-[#94a3b8] mt-0.5">
+                                                {pl.lat && `Lat: ${pl.lat}`}{pl.lat && pl.lng && "  ·  "}{pl.lng && `Lng: ${pl.lng}`}
+                                              </p>
+                                            ) : (
+                                              <p className="text-xs text-[#9ca3af] dark:text-[#64748b] mt-0.5">No coordinates</p>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => updateZone(zone.id, "parkingLots", zone.parkingLots.filter((p: ParkingLotEntry) => p.id !== pl.id))}
+                                          className="p-1.5 rounded-lg hover:bg-[#fee2e2] dark:hover:bg-[#7f1d1d] transition-colors ml-2 flex-shrink-0"
+                                        >
+                                          <Trash2 className="size-3.5 text-[#dc2626] dark:text-[#f87171]" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           <div>
@@ -476,6 +572,7 @@ export default function AddZone() {
                                 {zone.zoneType}
                                 {zone.capacity && ` · ${zone.capacity} capacity`}
                                 {zone.policyTemplate && ` · ${zone.policyTemplate}`}
+                                {zone.parkingLots.length > 0 && ` · ${zone.parkingLots.length} parking lot${zone.parkingLots.length > 1 ? "s" : ""}`}
                               </p>
                             </div>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

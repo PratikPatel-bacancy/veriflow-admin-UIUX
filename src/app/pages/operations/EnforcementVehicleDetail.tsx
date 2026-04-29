@@ -182,7 +182,7 @@ function TabOverview({ vehicle }: { vehicle: typeof MOCK_VEHICLES[0] }) {
 
 // ── Tab: Cameras ───────────────────────────────────────────────────────────
 
-function TabCameras() {
+function TabCameras({ onEdit }: { onEdit: (position: string) => void }) {
   const positions = ["Front", "Rear", "Left", "Right"];
   return (
     <div className="grid grid-cols-2 gap-5">
@@ -207,25 +207,232 @@ function TabCameras() {
                   <p className="text-xs text-[#9ca3af]">{pos} mount</p>
                 </div>
               </div>
-              <span className={statusBadge(cam.status)}>{cam.status}</span>
+              <div className="flex items-center gap-2">
+                <span className={statusBadge(cam.status)}>{cam.status}</span>
+                <button
+                  onClick={() => onEdit(pos)}
+                  title="Edit camera"
+                  className="p-1.5 rounded-lg text-[#6b7280] hover:text-[#3b82f6] hover:bg-[#eff6ff] dark:hover:bg-[rgba(59,130,246,0.1)] transition-colors"
+                >
+                  <Pencil className="size-3.5" />
+                </button>
+              </div>
             </div>
             <div className="flex flex-col gap-1">
-              <DetailRow label="Serial"      value={cam.serial} />
-              <DetailRow label="MAC"         value={cam.mac} />
-              <DetailRow label="Firmware"    value={
+              <DetailRow label="Serial"       value={cam.serial} />
+              <DetailRow label="MAC"          value={cam.mac} />
+              <DetailRow label="Firmware"     value={
                 <span className={`text-xs font-medium px-2 py-0.5 rounded ${cam.firmware === "v3.1.4" ? "bg-[#d1fae5] text-[#065f46]" : "bg-[#fef3c7] text-[#92400e]"}`}>
                   {cam.firmware} {cam.firmware !== "v3.1.4" && "· Update available"}
                 </span>
               } />
-              <DetailRow label="PoE Port"    value={cam.poePort} />
-              <DetailRow label="Direction"   value={cam.captureDirection} />
+              <DetailRow label="PoE Port"     value={cam.poePort} />
+              <DetailRow label="Direction"    value={cam.captureDirection} />
               <DetailRow label="ANPR Profile" value={cam.anprProfile} />
-              <DetailRow label="MMR"         value={cam.mmrEnabled ? "Enabled" : "Disabled"} />
-              <DetailRow label="Confidence"  value={cam.confidence} />
+              <DetailRow label="MMR"          value={cam.mmrEnabled ? "Enabled" : "Disabled"} />
+              <DetailRow label="Confidence"   value={cam.confidence} />
             </div>
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ── Edit Camera Panel ──────────────────────────────────────────────────────
+
+const ANPR_PROFILES = ["US — Generic", "US — California", "US — Texas", "EU — Generic", "AU — Generic"];
+const IR_MODES      = ["Auto", "On", "Off"];
+const CAPTURE_DIRS  = ["Towards", "Away", "Both"];
+
+function EditCameraPanel({ position, onClose }: { position: string; onClose: () => void }) {
+  const cam = MOCK_CAMERAS.find((c) => c.position === position);
+
+  const [form, setForm] = useState({
+    poePort:          cam?.poePort          ?? "",
+    captureDirection: cam?.captureDirection ?? "Towards",
+    anprProfile:      cam?.anprProfile      ?? "US — Generic",
+    irMode:           cam?.irMode           ?? "Auto",
+    confidenceFloor:  cam?.confidence       ?? "0.70",
+    charSizeFloor:    cam?.charSizeFloor    ?? "",
+    mmrEnabled:       cam?.mmrEnabled       ?? true,
+    status:           cam?.status           ?? "Active",
+    notes:            "",
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [done, setDone]           = useState(false);
+
+  const patch = (p: Partial<typeof form>) => setForm((f) => ({ ...f, ...p }));
+  const valid = form.poePort.trim() !== "";
+
+  const handleSubmit = () => {
+    setSubmitted(true);
+    if (!valid) return;
+    setDone(true);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex">
+      <div className="flex-1 bg-black/40 dark:bg-black/60" onClick={onClose} />
+      <div className="w-[480px] bg-white dark:bg-[#0f1f35] h-full flex flex-col shadow-2xl border-l border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
+          <div className="flex items-center gap-2">
+            <Pencil className="size-4 text-[#3b82f6]" />
+            <h2 className="text-[16px] font-semibold text-[#111827] dark:text-[#e8eef5]">
+              Edit Camera — {position} Mount
+            </h2>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-[#6b7280] hover:bg-[#f3f4f6] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors">
+            <X className="size-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+          {done ? (
+            <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+              <CheckCircle2 className="size-12 text-[#10b981]" />
+              <p className="text-base font-semibold text-[#111827] dark:text-[#e8eef5]">Camera updated successfully</p>
+              <p className="text-sm text-[#6b7280] dark:text-[#94a3b8]">
+                Configuration changes for <span className="font-medium">{cam?.name}</span> have been saved and will apply on next sync.
+              </p>
+              <button onClick={onClose} className="mt-2 px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-medium rounded-lg transition-colors">
+                Close
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Current camera info (read-only) */}
+              <div className="bg-[#f8fafc] dark:bg-[#0a1628] rounded-lg p-4 border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
+                <p className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider mb-3">Camera</p>
+                <div className="flex items-center gap-3">
+                  <div className="size-9 rounded-lg bg-[#eff6ff] dark:bg-[rgba(59,130,246,0.1)] flex items-center justify-center">
+                    <Camera className="size-4 text-[#3b82f6]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#111827] dark:text-[#e8eef5]">{cam?.name}</p>
+                    <p className="text-xs text-[#9ca3af]">{cam?.serial} · {cam?.mac}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* PoE Port */}
+              <div>
+                <label className={slLabelCls}>PoE Port <span className="text-[#ef4444]">*</span></label>
+                <input
+                  className={slInputCls}
+                  placeholder="e.g. PoE1"
+                  value={form.poePort}
+                  onChange={(e) => patch({ poePort: e.target.value })}
+                />
+                {submitted && !form.poePort.trim() && <p className="text-xs text-[#ef4444] mt-1">Required</p>}
+              </div>
+
+              {/* Capture Direction */}
+              <div>
+                <label className={slLabelCls}>Capture Direction</label>
+                <select className={slSelectCls} value={form.captureDirection} onChange={(e) => patch({ captureDirection: e.target.value })}>
+                  {CAPTURE_DIRS.map((d) => <option key={d}>{d}</option>)}
+                </select>
+              </div>
+
+              {/* ANPR Profile */}
+              <div>
+                <label className={slLabelCls}>ANPR Profile</label>
+                <select className={slSelectCls} value={form.anprProfile} onChange={(e) => patch({ anprProfile: e.target.value })}>
+                  {ANPR_PROFILES.map((p) => <option key={p}>{p}</option>)}
+                </select>
+              </div>
+
+              {/* IR Illumination */}
+              <div>
+                <label className={slLabelCls}>IR Illumination Mode</label>
+                <select className={slSelectCls} value={form.irMode} onChange={(e) => patch({ irMode: e.target.value })}>
+                  {IR_MODES.map((m) => <option key={m}>{m}</option>)}
+                </select>
+              </div>
+
+              {/* Confidence + Char size */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={slLabelCls}>Confidence Floor</label>
+                  <input
+                    className={slInputCls}
+                    type="number" min="0" max="1" step="0.05"
+                    placeholder="0.70"
+                    value={form.confidenceFloor}
+                    onChange={(e) => patch({ confidenceFloor: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className={slLabelCls}>Char Size Floor (px)</label>
+                  <input
+                    className={slInputCls}
+                    type="number"
+                    placeholder="e.g. 20"
+                    value={form.charSizeFloor}
+                    onChange={(e) => patch({ charSizeFloor: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* MMR + Status */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={slLabelCls}>Status</label>
+                  <select className={slSelectCls} value={form.status} onChange={(e) => patch({ status: e.target.value })}>
+                    <option value="Active">Active</option>
+                    <option value="Disabled">Disabled</option>
+                  </select>
+                </div>
+                <div className="flex flex-col justify-end pb-0.5">
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <div
+                      onClick={() => patch({ mmrEnabled: !form.mmrEnabled })}
+                      className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer flex-shrink-0 ${form.mmrEnabled ? "bg-[#3b82f6]" : "bg-[#d1d5db] dark:bg-[#374151]"}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 size-4 bg-white rounded-full shadow transition-transform ${form.mmrEnabled ? "translate-x-5" : "translate-x-0"}`} />
+                    </div>
+                    <span className="text-sm text-[#374151] dark:text-[#cbd5e1]">MMR Enabled</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className={slLabelCls}>Change Notes <span className="text-xs font-normal text-[#9ca3af]">(optional)</span></label>
+                <textarea
+                  className={`${slInputCls} resize-none`}
+                  rows={2}
+                  placeholder="e.g. Adjusted confidence floor after field calibration"
+                  value={form.notes}
+                  onChange={(e) => patch({ notes: e.target.value })}
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        {!done && (
+          <div className="px-6 py-4 border-t border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] flex gap-3">
+            <button
+              onClick={handleSubmit}
+              className="flex-1 px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              Save Changes
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.2)] text-[#374151] dark:text-[#cbd5e1] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.4)] text-sm font-medium rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -737,6 +944,7 @@ export default function EnforcementVehicleDetail() {
   const [showReplaceController, setShowReplaceController] = useState(false);
   const [showMaintenance, setShowMaintenance] = useState(false);
   const [showDecommission, setShowDecommission] = useState(false);
+  const [editCameraPosition, setEditCameraPosition] = useState<string | null>(null);
 
   const vehicle = MOCK_VEHICLES.find((v) => v.id === Number(id)) ?? MOCK_VEHICLES[0];
 
@@ -813,12 +1021,20 @@ export default function EnforcementVehicleDetail() {
 
         {/* Tab content */}
         {activeTab === "overview"   && <TabOverview vehicle={vehicle} />}
-        {activeTab === "cameras"    && <TabCameras />}
+        {activeTab === "cameras"    && <TabCameras onEdit={(pos) => setEditCameraPosition(pos)} />}
         {activeTab === "controller" && <TabController />}
         {activeTab === "health"     && <TabHealth />}
 
       </div>
     </div>
+
+    {/* ── Edit Camera slide-over ── */}
+    {editCameraPosition && (
+      <EditCameraPanel
+        position={editCameraPosition}
+        onClose={() => setEditCameraPosition(null)}
+      />
+    )}
 
     {/* ── Replace Controller slide-over ── */}
     {showReplaceController && (

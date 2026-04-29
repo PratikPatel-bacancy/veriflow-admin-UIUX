@@ -15,6 +15,7 @@ import LiveOperations from "./pages/operations/LiveOperations";
 import Violations from "./pages/operations/Violations";
 import Payments from "./pages/operations/Payments";
 import Devices from "./pages/operations/Devices";
+import DeviceDetail from "./pages/operations/DeviceDetail";
 import Compliance from "./pages/operations/Compliance";
 import EnforcementVehicles from "./pages/operations/EnforcementVehicles";
 import AddEnforcementVehicle from "./pages/operations/AddEnforcementVehicle";
@@ -28,8 +29,11 @@ import CustomTemplateBuilder from "./pages/configuration/CustomTemplateBuilder";
 import PolicyAssignmentWizard from "./pages/configuration/PolicyAssignmentWizard";
 import PolicyDetail from "./pages/configuration/PolicyDetail";
 import Tariffs from "./pages/configuration/Tariffs";
+import NewTariff from "./pages/configuration/NewTariff";
 import Permits from "./pages/configuration/Permits";
+import NewPermit from "./pages/configuration/NewPermit";
 import EventsCalendar from "./pages/configuration/EventsCalendar";
+import NewSpecialEvent from "./pages/configuration/NewSpecialEvent";
 import Users from "./pages/admin/Users";
 import AuditLogs from "./pages/admin/AuditLogs";
 import Settings from "./pages/admin/Settings";
@@ -101,6 +105,10 @@ export const router = createBrowserRouter([
         Component: Devices,
       },
       {
+        path: "operations/devices/:id",
+        Component: DeviceDetail,
+      },
+      {
         path: "operations/compliance",
         Component: Compliance,
       },
@@ -161,12 +169,24 @@ export const router = createBrowserRouter([
         Component: Tariffs,
       },
       {
+        path: "configuration/tariffs/new",
+        Component: NewTariff,
+      },
+      {
         path: "configuration/permits",
         Component: Permits,
       },
       {
+        path: "configuration/permits/new",
+        Component: NewPermit,
+      },
+      {
         path: "configuration/events",
         Component: EventsCalendar,
+      },
+      {
+        path: "configuration/events/new",
+        Component: NewSpecialEvent,
       },
       {
         path: "admin/users",

@@ -3,18 +3,7 @@ import { useNavigate } from "react-router";
 import {
   Plus,
   ChevronDown,
-  FileText,
-  GitBranch,
-  AlertTriangle,
-  Layers,
   MoreHorizontal,
-  Download,
-  Map,
-  Grid3X3,
-  List,
-  CheckSquare,
-  Square,
-  Info,
   Clock,
   Key,
   ShieldCheck,
@@ -27,6 +16,11 @@ import {
   Search,
   X,
   ArrowRight,
+  Download,
+  CheckSquare,
+  Square,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 // ── Real data mirrored from SitesList, ZoneList ──────────────────────────
@@ -175,31 +169,9 @@ const mockPolicies = [
   },
 ];
 
-// ── Matrix: real zones × rule types ──────────────────────────────────────
+// ── Rule types used for filter dropdown ──────────────────────────────────
 
 const RULE_TYPES = ["Time-Limit", "Permit", "No-Stopping", "Loading", "EV-Only", "Handicap"];
-
-const MATRIX_ZONES = [
-  "Zone A — Permit Holders Only",
-  "Zone B — General Public Parking",
-  "Zone C — Faculty & Staff Reserved",
-  "Zone D — Short-Term Visitor (2-Hour)",
-  "Zone E — EV Charging Stations",
-  "Zone F — Accessible Parking (ADA)",
-  "Zone G — Event Day Overflow",
-  "Zone H — Motorcycle & Bicycle",
-];
-
-const matrixData: Record<string, Record<string, boolean>> = {
-  "Zone A — Permit Holders Only":       { "Time-Limit": false, "Permit": true,  "No-Stopping": false, "Loading": false, "EV-Only": false, "Handicap": true  },
-  "Zone B — General Public Parking":    { "Time-Limit": true,  "Permit": false, "No-Stopping": false, "Loading": false, "EV-Only": false, "Handicap": true  },
-  "Zone C — Faculty & Staff Reserved":  { "Time-Limit": false, "Permit": true,  "No-Stopping": false, "Loading": false, "EV-Only": false, "Handicap": true  },
-  "Zone D — Short-Term Visitor (2-Hour)":{ "Time-Limit": true,  "Permit": false, "No-Stopping": false, "Loading": false, "EV-Only": false, "Handicap": true  },
-  "Zone E — EV Charging Stations":      { "Time-Limit": false, "Permit": false, "No-Stopping": false, "Loading": false, "EV-Only": true,  "Handicap": false },
-  "Zone F — Accessible Parking (ADA)":  { "Time-Limit": false, "Permit": false, "No-Stopping": false, "Loading": false, "EV-Only": false, "Handicap": true  },
-  "Zone G — Event Day Overflow":        { "Time-Limit": true,  "Permit": false, "No-Stopping": true,  "Loading": false, "EV-Only": false, "Handicap": true  },
-  "Zone H — Motorcycle & Bicycle":      { "Time-Limit": true,  "Permit": false, "No-Stopping": false, "Loading": false, "EV-Only": false, "Handicap": false },
-};
 
 // ── 12 System Templates ──────────────────────────────────────────────────
 
@@ -344,7 +316,7 @@ const TEMPLATE_CATEGORIES = ["All", ...Array.from(new Set(TEMPLATES.map((t) => t
 
 const STATUS_FILTERS = ["All", "Active", "Scheduled", "Draft", "Archived"];
 
-const ROW_MENU_OPTIONS = ["Edit", "Duplicate", "Schedule", "View Version History", "View Policy Trace", "Archive"];
+
 
 const STATUS_STYLES: Record<string, string> = {
   Active:    "bg-[#d1fae5] dark:bg-[#065f46] text-[#065f46] dark:text-[#6ee7b7]",
@@ -356,11 +328,8 @@ const STATUS_STYLES: Record<string, string> = {
 export default function PoliciesHome() {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState("All");
-  const [activeTab, setActiveTab] = useState<"list" | "map" | "matrix">("list");
-  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [openRowMenu, setOpenRowMenu] = useState<number | null>(null);
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
-  const [showBulkMenu, setShowBulkMenu] = useState(false);
   const [showTemplateGallery, setShowTemplateGallery] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [templateSearch, setTemplateSearch] = useState("");
@@ -368,39 +337,27 @@ export default function PoliciesHome() {
   const [siteFilter, setSiteFilter] = useState("all");
   const [zoneFilter, setZoneFilter] = useState("all");
   const [ruleTypeFilter, setRuleTypeFilter] = useState("all");
+  const [search, setSearch] = useState("");
+
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
 
   const templateDropdownRef = useRef<HTMLDivElement>(null);
-  const bulkMenuRef = useRef<HTMLDivElement>(null);
 
   const filteredPolicies = mockPolicies.filter((p) => {
+    if (search) {
+      const q = search.toLowerCase();
+      if (!p.name.toLowerCase().includes(q) && !p.template.toLowerCase().includes(q) && !p.target.toLowerCase().includes(q)) return false;
+    }
     if (statusFilter !== "All" && p.status !== statusFilter) return false;
     if (zoneFilter !== "all" && !p.target.includes(zoneFilter)) return false;
     if (ruleTypeFilter !== "all" && p.template !== ruleTypeFilter) return false;
     return true;
   });
 
-  const allSelected =
-    filteredPolicies.length > 0 &&
-    filteredPolicies.every((p) => selectedRows.has(p.id));
-
-  const toggleSelectAll = () => {
-    if (allSelected) setSelectedRows(new Set());
-    else setSelectedRows(new Set(filteredPolicies.map((p) => p.id)));
-  };
-
-  const toggleRow = (id: number) => {
-    const next = new Set(selectedRows);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setSelectedRows(next);
-  };
-
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (templateDropdownRef.current && !templateDropdownRef.current.contains(e.target as Node))
         setShowTemplateDropdown(false);
-      if (bulkMenuRef.current && !bulkMenuRef.current.contains(e.target as Node))
-        setShowBulkMenu(false);
       setOpenRowMenu(null);
     };
     document.addEventListener("mousedown", handler);
@@ -462,349 +419,201 @@ export default function PoliciesHome() {
         </div>
       </div>
 
-      {/* ── Quick Filters ── */}
+      {/* ── Filters ── */}
       <div className="px-8 pt-5">
-        <div className="flex items-center justify-between bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-4 shadow-sm space-y-3">
-          {/* Status chips */}
-          <div className="flex items-center gap-2 flex-wrap mb-0">
+        <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-4 shadow-sm flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#9ca3af]" />
+            <input
+              type="text"
+              placeholder="Search by policy name, template, or target…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.2)] rounded-lg bg-transparent text-[#111827] dark:text-[#e8eef5] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-[200px] px-4 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg bg-white dark:bg-[#0f1f35] text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+          >
             {STATUS_FILTERS.map((f) => (
-              <button
-                key={f}
-                onClick={() => setStatusFilter(f)}
-                className={`px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors ${
-                  statusFilter === f
-                    ? "bg-[#3b82f6] text-white"
-                    : "bg-[#f3f4f6] dark:bg-[#1a2d47] text-[#374151] dark:text-[#94a3b8] hover:bg-[#e5e7eb] dark:hover:bg-[rgba(30,58,95,0.7)]"
-                }`}
-              >
-                {f}
-              </button>
+              <option key={f} value={f}>{f === "All" ? "All Statuses" : f}</option>
             ))}
-          </div>
-
-          {/* Dropdown filters */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <select
-              value={siteFilter}
-              onChange={(e) => setSiteFilter(e.target.value)}
-              className="bg-[#f9fafb] dark:bg-[#0a1628] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg px-3 py-1.5 text-sm text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
-            >
-              <option value="all">Site: All</option>
-              {SITES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-
-            <select
-              value={zoneFilter}
-              onChange={(e) => setZoneFilter(e.target.value)}
-              className="bg-[#f9fafb] dark:bg-[#0a1628] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg px-3 py-1.5 text-sm text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
-            >
-              <option value="all">Zone: All</option>
-              {ZONES.map((z) => <option key={z} value={z}>{z}</option>)}
-            </select>
-
-            <select
-              value={ruleTypeFilter}
-              onChange={(e) => setRuleTypeFilter(e.target.value)}
-              className="bg-[#f9fafb] dark:bg-[#0a1628] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg px-3 py-1.5 text-sm text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
-            >
-              <option value="all">Rule Type: All</option>
-              {RULE_TYPES.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
+          </select>
+          <select
+            value={siteFilter}
+            onChange={(e) => setSiteFilter(e.target.value)}
+            className="w-[200px] px-4 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg bg-white dark:bg-[#0f1f35] text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+          >
+            <option value="all">All Sites</option>
+            {SITES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <select
+            value={zoneFilter}
+            onChange={(e) => setZoneFilter(e.target.value)}
+            className="w-[200px] px-4 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg bg-white dark:bg-[#0f1f35] text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+          >
+            <option value="all">All Zones</option>
+            {ZONES.map((z) => <option key={z} value={z}>{z}</option>)}
+          </select>
+          <select
+            value={ruleTypeFilter}
+            onChange={(e) => setRuleTypeFilter(e.target.value)}
+            className="w-[200px] px-4 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg bg-white dark:bg-[#0f1f35] text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+          >
+            <option value="all">All Rule Types</option>
+            {RULE_TYPES.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
         </div>
       </div>
 
-      {/* ── KPI Row ── */}
-      <div className="px-8 pt-5">
-        <div className="grid grid-cols-4 gap-5">
-          {[
-            {
-              value: String(mockPolicies.filter((p) => p.status === "Active").length),
-              label: "Active Policies",
-              icon: <FileText className="size-5 text-[#3b82f6] dark:text-[#60a5fa]" />,
-              iconBg: "bg-[#dbeafe] dark:bg-[#1e3a8a]",
-              tooltip: "Total policies currently active and enforced across all sites and zones",
-            },
-            {
-              value: String(mockPolicies.filter((p) => p.status === "Scheduled").length),
-              label: "Scheduled",
-              icon: <GitBranch className="size-5 text-[#ea580c] dark:text-[#fb923c]" />,
-              iconBg: "bg-[#ffedd5] dark:bg-[#7c2d12]",
-              tooltip: "Policies configured but not yet in effect — will activate at their scheduled start date",
-            },
-            {
-              value: "3",
-              label: "Conflicts",
-              icon: <AlertTriangle className="size-5 text-[#dc2626] dark:text-[#f87171]" />,
-              iconBg: "bg-[#fee2e2] dark:bg-[#7f1d1d]",
-              tooltip: "Overlapping policy assignments on the same target with competing priority levels",
-            },
-            {
-              value: "12",
-              label: "Templates",
-              icon: <Layers className="size-5 text-[#7c3aed] dark:text-[#a78bfa]" />,
-              iconBg: "bg-[#ede9fe] dark:bg-[#4c1d95]",
-              tooltip: "Available policy templates including system defaults and custom-built templates",
-            },
-          ].map(({ value, label, icon, iconBg, tooltip }) => (
-            <div
-              key={label}
-              className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm relative"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className={`${iconBg} rounded-lg p-2.5`}>{icon}</div>
-                <div className="group">
-                  <Info className="size-4 text-[#6b7280] dark:text-[#94a3b8] cursor-help" />
-                  <div className="invisible group-hover:visible absolute right-4 top-14 w-64 bg-[#111827] dark:bg-[#1a2d47] text-white dark:text-[#e8eef5] text-xs rounded-lg px-3 py-2 shadow-lg z-50 border border-transparent dark:border-[rgba(59,130,246,0.15)]">
-                    {tooltip}
-                  </div>
-                </div>
-              </div>
-              <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">
-                {value}
-              </p>
-              <p className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8] mt-1">{label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Tabbed Table ── */}
+      {/* ── Policy Table ── */}
       <div className="px-8 pt-6">
         <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-[#f9fafb] dark:bg-[#0a1628] border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
+                  <th className="px-4 py-3 w-10">
+                    <button
+                      onClick={() => {
+                        if (selectedRows.size === filteredPolicies.length) {
+                          setSelectedRows(new Set());
+                        } else {
+                          setSelectedRows(new Set(filteredPolicies.map((p) => p.id)));
+                        }
+                      }}
+                      className="text-[#9ca3af] dark:text-[#6b7280] hover:text-[#3b82f6] transition-colors"
+                    >
+                      {selectedRows.size === filteredPolicies.length && filteredPolicies.length > 0
+                        ? <CheckSquare className="size-4" />
+                        : <Square className="size-4" />
+                      }
+                    </button>
+                  </th>
+                  {["Policy Name", "Template", "Target", "Window", "Status", ""].map((col) => (
+                    <th key={col} className="text-left text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8] px-4 py-3 whitespace-nowrap">
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPolicies.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-16 text-center text-[14px] text-[#6b7280] dark:text-[#94a3b8]">
+                      No policies match the current filters.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredPolicies.map((policy) => (
+                    <tr
+                      key={policy.id}
+                      onClick={() => navigate(`/configuration/policies/${policy.id}`)}
+                      className="border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] cursor-pointer"
+                    >
+                      {/* Checkbox */}
+                      <td className="px-4 py-4 w-10" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => {
+                            const next = new Set(selectedRows);
+                            next.has(policy.id) ? next.delete(policy.id) : next.add(policy.id);
+                            setSelectedRows(next);
+                          }}
+                          className="text-[#9ca3af] dark:text-[#6b7280] hover:text-[#3b82f6] transition-colors"
+                        >
+                          {selectedRows.has(policy.id)
+                            ? <CheckSquare className="size-4 text-[#3b82f6]" />
+                            : <Square className="size-4" />
+                          }
+                        </button>
+                      </td>
 
-          {/* Tab Bar */}
-          <div className="flex items-center gap-1 px-6 pt-4 border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-            {(
-              [
-                { id: "list",   label: "List View",   icon: <List className="size-4" /> },
-                { id: "map",    label: "Map View",    icon: <Map className="size-4" /> },
-                { id: "matrix", label: "Matrix View", icon: <Grid3X3 className="size-4" /> },
-              ] as const
-            ).map(({ id, label, icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-2 px-4 py-2 text-[14px] font-medium transition-colors ${
-                  activeTab === id
-                    ? "text-[#3b82f6] dark:text-[#60a5fa] border-b-2 border-[#3b82f6] dark:border-[#60a5fa]"
-                    : "text-[#6b7280] dark:text-[#94a3b8] hover:text-[#111827] dark:hover:text-[#e8eef5]"
-                }`}
-              >
-                {icon}
-                {label}
-              </button>
-            ))}
+                      {/* Policy Name */}
+                      <td className="px-4 py-4">
+                        <p className="text-[14px] font-medium text-[#111827] dark:text-[#e8eef5] whitespace-nowrap">{policy.name}</p>
+                      </td>
+
+                      {/* Template */}
+                      <td className="px-4 py-4 text-[14px] text-[#6b7280] dark:text-[#94a3b8] whitespace-nowrap">
+                        {policy.template}
+                      </td>
+
+                      {/* Target */}
+                      <td className="px-4 py-4 text-[14px] text-[#6b7280] dark:text-[#94a3b8] max-w-[260px] truncate">
+                        <span className="text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
+                          {policy.targetType} / </span>{policy.target}
+                      </td>
+
+                      {/* Window */}
+                      <td className="px-4 py-4 text-[14px] text-[#6b7280] dark:text-[#94a3b8] whitespace-nowrap">
+                        {policy.window}
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-4 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium ${STATUS_STYLES[policy.status] ?? STATUS_STYLES.Draft}`}>
+                          {policy.status}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-1">
+                          <button className="p-1.5 rounded-lg hover:bg-[#eff6ff] dark:hover:bg-[rgba(59,130,246,0.1)] transition-colors" title="Edit">
+                            <Pencil className="size-3.5 text-[#3b82f6] dark:text-[#60a5fa]" />
+                          </button>
+                          <button className="p-1.5 rounded-lg hover:bg-[#fee2e2] dark:hover:bg-[#7f1d1d] transition-colors" title="Delete">
+                            <Trash2 className="size-3.5 text-[#ef4444] dark:text-[#f87171]" />
+                          </button>
+                          <div className="relative">
+                            <button
+                              onClick={() => setOpenRowMenu(openRowMenu === policy.id ? null : policy.id)}
+                              className="p-1.5 rounded-lg hover:bg-[#f3f4f6] dark:hover:bg-[rgba(30,58,95,0.7)] transition-colors"
+                            >
+                              <MoreHorizontal className="size-4 text-[#6b7280] dark:text-[#94a3b8]" />
+                            </button>
+                            {openRowMenu === policy.id && (
+                              <div className="absolute right-0 top-8 w-52 bg-white dark:bg-[#0f1f35] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg shadow-lg z-50 py-1">
+                                {["Duplicate", "Schedule", "View Version History", "View Policy Trace"].map((opt) => (
+                                  <button
+                                    key={opt}
+                                    onClick={() => setOpenRowMenu(null)}
+                                    className="w-full text-left px-4 py-2 text-[13px] text-[#111827] dark:text-[#e8eef5] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors"
+                                  >
+                                    {opt}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
 
-          {/* ── List View ── */}
-          {activeTab === "list" && (
-            <div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-[#f9fafb] dark:bg-[#0a1628] border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-                      <th className="px-6 py-3 w-10">
-                        <button onClick={toggleSelectAll} className="flex items-center">
-                          {allSelected
-                            ? <CheckSquare className="size-4 text-[#3b82f6]" />
-                            : <Square className="size-4 text-[#6b7280] dark:text-[#94a3b8]" />}
-                        </button>
-                      </th>
-                      {["Policy Name", "Template", "Target", "Window", "Priority", "Status", ""].map((h) => (
-                        <th key={h} className="text-left px-4 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8] uppercase tracking-wider whitespace-nowrap">
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPolicies.map((policy) => (
-                      <tr
-                        key={policy.id}
-                        onClick={() => navigate(`/configuration/policies/${policy.id}`)}
-                        className="border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors cursor-pointer"
-                      >
-                        <td className="px-6 py-4">
-                          <button onClick={(e) => { e.stopPropagation(); toggleRow(policy.id); }} className="flex items-center">
-                            {selectedRows.has(policy.id)
-                              ? <CheckSquare className="size-4 text-[#3b82f6]" />
-                              : <Square className="size-4 text-[#6b7280] dark:text-[#94a3b8]" />}
-                          </button>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className="font-['Inter'] font-medium text-[14px] text-[#111827] dark:text-[#e8eef5]">
-                            {policy.name}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 text-[14px] text-[#6b7280] dark:text-[#94a3b8]">
-                          {policy.template}
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="text-[13px]">
-                            <span className="text-[#6b7280] dark:text-[#94a3b8]">{policy.targetType} / </span>
-                            <span className="text-[#111827] dark:text-[#e8eef5] font-medium">{policy.target}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-[13px] text-[#6b7280] dark:text-[#94a3b8] whitespace-nowrap">
-                          {policy.window}
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className="font-['Inter'] font-medium text-[14px] text-[#111827] dark:text-[#e8eef5]">
-                            {policy.priority}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[policy.status] ?? STATUS_STYLES.Draft}`}>
-                            {policy.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 relative">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setOpenRowMenu(openRowMenu === policy.id ? null : policy.id); }}
-                            className="p-1.5 rounded-lg hover:bg-[#f3f4f6] dark:hover:bg-[rgba(30,58,95,0.7)] transition-colors"
-                          >
-                            <MoreHorizontal className="size-4 text-[#6b7280] dark:text-[#94a3b8]" />
-                          </button>
-                          {openRowMenu === policy.id && (
-                            <div className="absolute right-6 top-10 w-52 bg-white dark:bg-[#0f1f35] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg shadow-lg z-50 py-1">
-                              {ROW_MENU_OPTIONS.map((opt) => (
-                                <button
-                                  key={opt}
-                                  onClick={(e) => { e.stopPropagation(); setOpenRowMenu(null); }}
-                                  className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                                    opt === "Archive"
-                                      ? "text-[#dc2626] dark:text-[#f87171] hover:bg-[#fee2e2] dark:hover:bg-[#7f1d1d]"
-                                      : "text-[#111827] dark:text-[#e8eef5] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)]"
-                                  }`}
-                                >
-                                  {opt}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-
-                    {filteredPolicies.length === 0 && (
-                      <tr>
-                        <td colSpan={8} className="px-6 py-12 text-center text-[14px] text-[#6b7280] dark:text-[#94a3b8]">
-                          No policies match the selected filters.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Table Footer */}
-              <div className="px-6 py-3 flex items-center justify-between border-t border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-                <div className="flex items-center gap-3" ref={bulkMenuRef}>
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowBulkMenu((v) => !v)}
-                      disabled={selectedRows.size === 0}
-                      className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg text-[#111827] dark:text-[#e8eef5] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Bulk Actions
-                      <ChevronDown className="size-3.5" />
-                    </button>
-                    {showBulkMenu && selectedRows.size > 0 && (
-                      <div className="absolute left-0 bottom-full mb-1 w-52 bg-white dark:bg-[#0f1f35] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg shadow-lg z-50 py-1">
-                        {["Archive Selected", "Duplicate Selected", "Change Validity", "Assign to Group", "Export Selected"].map((opt) => (
-                          <button key={opt} className="w-full text-left px-4 py-2 text-sm text-[#111827] dark:text-[#e8eef5] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors">
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {selectedRows.size > 0 && (
-                    <span className="text-sm text-[#6b7280] dark:text-[#94a3b8]">{selectedRows.size} selected</span>
-                  )}
-                </div>
-                <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg text-[#111827] dark:text-[#e8eef5] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors">
-                  <Download className="size-4" />
-                  Export CSV
-                </button>
-              </div>
+          {/* Table footer: bulk actions + export */}
+          <div className="flex items-center justify-between px-4 py-3 border-t border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] bg-[#f9fafb] dark:bg-[#0a1628]">
+            <div className="relative">
+              <button
+                disabled={selectedRows.size === 0}
+                onClick={() => {}}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg text-[#374151] dark:text-[#94a3b8] bg-white dark:bg-[#0f1f35] hover:bg-[#f3f4f6] dark:hover:bg-[rgba(30,58,95,0.5)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Bulk Actions
+                <ChevronDown className="size-3.5" />
+              </button>
             </div>
-          )}
-
-          {/* ── Map View ── */}
-          {activeTab === "map" && (
-            <div className="h-[480px] flex flex-col items-center justify-center gap-4 text-center p-8">
-              <div className="bg-[#dbeafe] dark:bg-[#1e3a8a] rounded-2xl p-5">
-                <Map className="size-12 text-[#3b82f6] dark:text-[#60a5fa]" />
-              </div>
-              <div>
-                <p className="font-['Inter'] font-semibold text-[16px] text-[#111827] dark:text-[#e8eef5] mb-1">Zone Policy Map</p>
-                <p className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8] max-w-sm">
-                  Zones are color-coded by their primary policy type. Click a zone polygon to view all policies stacked there.
-                </p>
-              </div>
-              <span className="px-3 py-1 rounded-full bg-[#f3f4f6] dark:bg-[#1a2d47] text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                Map integration coming soon
-              </span>
-            </div>
-          )}
-
-          {/* ── Matrix View ── */}
-          {activeTab === "matrix" && (
-            <div className="p-6 overflow-x-auto">
-              <div className="mb-4 flex items-center gap-5">
-                <p className="text-[13px] font-medium text-[#6b7280] dark:text-[#94a3b8]">Coverage: Zone × Rule Type</p>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1.5">
-                    <div className="size-3 rounded-sm bg-[#d1fae5] dark:bg-[#065f46] border border-[#6ee7b7]" />
-                    <span className="text-[12px] text-[#6b7280] dark:text-[#94a3b8]">Covered</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="size-3 rounded-sm bg-[#fee2e2] dark:bg-[#7f1d1d] border border-[#fca5a5]" />
-                    <span className="text-[12px] text-[#6b7280] dark:text-[#94a3b8]">Gap — no policy</span>
-                  </div>
-                </div>
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className="text-left py-2 pr-6 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8] min-w-[220px]">
-                      Zone
-                    </th>
-                    {RULE_TYPES.map((rt) => (
-                      <th key={rt} className="px-3 py-2 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8] whitespace-nowrap text-center">
-                        {rt}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {MATRIX_ZONES.map((zone) => (
-                    <tr key={zone} className="border-t border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-                      <td className="py-2.5 pr-6 text-[13px] font-medium text-[#111827] dark:text-[#e8eef5]">
-                        {zone}
-                      </td>
-                      {RULE_TYPES.map((rt) => {
-                        const covered = matrixData[zone]?.[rt] ?? false;
-                        return (
-                          <td key={rt} className="px-3 py-2.5 text-center">
-                            <div className={`inline-flex items-center justify-center size-7 rounded-md text-[11px] font-bold ${
-                              covered
-                                ? "bg-[#d1fae5] dark:bg-[#065f46] text-[#065f46] dark:text-[#6ee7b7]"
-                                : "bg-[#fee2e2] dark:bg-[#7f1d1d] text-[#dc2626] dark:text-[#fca5a5]"
-                            }`}>
-                              {covered ? "✓" : "✗"}
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg text-[#374151] dark:text-[#94a3b8] bg-white dark:bg-[#0f1f35] hover:bg-[#f3f4f6] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors">
+              <Download className="size-3.5" />
+              Export CSV
+            </button>
+          </div>
         </div>
       </div>
 

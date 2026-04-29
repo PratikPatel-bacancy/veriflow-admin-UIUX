@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Plus, MoreHorizontal, CreditCard, X, Shield } from "lucide-react";
+import { useNavigate } from "react-router";
+import { Plus, MoreHorizontal, CreditCard, Shield, Search, Pencil, Trash2 } from "lucide-react";
 
 // ── Static data ───────────────────────────────────────────────────────────
 
@@ -17,15 +18,6 @@ const ZONES = [
 const CATEGORIES = [
   "RESIDENT", "EMPLOYEE", "HANDICAP", "COMMERCIAL",
   "FLEET", "MONTHLY", "CAMPUS", "VIP", "EV", "TENANT",
-];
-
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-const EXEMPTION_POLICIES = [
-  "Permit Holders Policy",
-  "2-Hour Free Parking",
-  "Faculty Reserved",
-  "Night Clearance — Zone G",
 ];
 
 const CATEGORY_STYLES: Record<string, string> = {
@@ -60,41 +52,20 @@ const MOCK_PERMITS: PermitType[] = [
   { id: 6, typeCode: "VIP-NORTH",   name: "VIP Reserved — North",    category: "VIP",        zonesCovered: ["Zone C — Faculty & Staff Reserved"],                                                                           activeCount: 56,     expires: "Annual"  },
 ];
 
-// ── Form state ────────────────────────────────────────────────────────────
-
-interface FormState {
-  typeCode: string;
-  name: string;
-  category: string;
-  zones: Set<string>;
-  validDays: Set<string>;
-  validStart: string;
-  validEnd: string;
-  effectiveFrom: string;
-  effectiveTo: string;
-  maxStay: string;
-  price: string;
-  exemptions: Set<string>;
-}
-
-const defaultForm = (): FormState => ({
-  typeCode: "", name: "", category: "RESIDENT",
-  zones: new Set(),
-  validDays: new Set(["Mon", "Tue", "Wed", "Thu", "Fri"]),
-  validStart: "08:00", validEnd: "18:00",
-  effectiveFrom: "", effectiveTo: "",
-  maxStay: "", price: "",
-  exemptions: new Set(),
-});
-
 // ── Component ─────────────────────────────────────────────────────────────
 
 export default function Permits() {
-  const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
   const [openRowMenu, setOpenRowMenu] = useState<number | null>(null);
-  const [form, setForm] = useState<FormState>(defaultForm());
-  const [submitted, setSubmitted] = useState(false);
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const filteredPermits = MOCK_PERMITS.filter((p) => {
+    if (categoryFilter !== "All" && p.category !== categoryFilter) return false;
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.typeCode.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -103,33 +74,6 @@ export default function Permits() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  const toggleZone = (z: string) => {
-    const s = new Set(form.zones); s.has(z) ? s.delete(z) : s.add(z);
-    setForm({ ...form, zones: s });
-  };
-
-  const toggleDay = (d: string) => {
-    const s = new Set(form.validDays); s.has(d) ? s.delete(d) : s.add(d);
-    setForm({ ...form, validDays: s });
-  };
-
-  const toggleExemption = (p: string) => {
-    const s = new Set(form.exemptions); s.has(p) ? s.delete(p) : s.add(p);
-    setForm({ ...form, exemptions: s });
-  };
-
-  const handleSave = () => {
-    setSubmitted(true);
-    if (!form.typeCode || !form.name || form.zones.size === 0) return;
-    setShowForm(false);
-    setForm(defaultForm());
-    setSubmitted(false);
-  };
-
-  const labelCls = "block text-[13px] font-medium text-[#374151] dark:text-[#cbd5e1] mb-1";
-  const inputCls = "w-full bg-[#f9fafb] dark:bg-[#0a1628] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.2)] rounded-lg px-3 py-2 text-[13px] text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]";
-  const errCls = "mt-1 text-[11px] text-[#dc2626]";
 
   return (
     <div className="flex-1 overflow-auto bg-[#eff6ff] dark:bg-[#0a1628] pb-8">
@@ -144,11 +88,33 @@ export default function Permits() {
             </p>
           </div>
           <button
-            onClick={() => { setShowForm(true); setForm(defaultForm()); setSubmitted(false); }}
+            onClick={() => navigate("/configuration/permits/new")}
             className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium bg-[#3b82f6] dark:bg-[#2563eb] text-white rounded-lg hover:bg-[#2563eb] dark:hover:bg-[#1d4ed8] transition-colors"
           >
             <Plus className="size-4" /> New Permit Type
           </button>
+        </div>
+
+        {/* Filter Bar */}
+        <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-4 shadow-sm flex flex-wrap gap-3 items-center mb-5">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#9ca3af]" />
+            <input
+              type="text"
+              placeholder="Search permits…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.2)] rounded-lg bg-transparent text-[#111827] dark:text-[#e8eef5] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+            />
+          </div>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-4 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg bg-white dark:bg-[#0f1f35] text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+          >
+            <option value="All">All Categories</option>
+            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
 
         {/* Table */}
@@ -164,7 +130,7 @@ export default function Permits() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_PERMITS.map((permit) => (
+              {filteredPermits.map((permit) => (
                 <tr key={permit.id} className="border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.08)] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.4)] transition-colors">
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-2">
@@ -190,22 +156,32 @@ export default function Permits() {
                     }
                   </td>
                   <td className="px-4 py-4 text-[13px] text-[#6b7280] dark:text-[#94a3b8]">{permit.expires}</td>
-                  <td className="px-4 py-4 relative" ref={openRowMenu === permit.id ? menuRef : undefined}>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setOpenRowMenu(openRowMenu === permit.id ? null : permit.id); }}
-                      className="p-1.5 rounded-lg text-[#6b7280] dark:text-[#94a3b8] hover:bg-[#f3f4f6] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors"
-                    >
-                      <MoreHorizontal className="size-4" />
-                    </button>
-                    {openRowMenu === permit.id && (
-                      <div className="absolute right-4 top-10 w-44 bg-white dark:bg-[#1a2d47] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-xl shadow-lg z-50 py-1 text-[13px]">
-                        {["Edit", "Duplicate", "View Holders", "Deactivate"].map((item) => (
-                          <button key={item} onClick={() => setOpenRowMenu(null)} className="w-full text-left px-4 py-2 text-[#111827] dark:text-[#e8eef5] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors">
-                            {item}
-                          </button>
-                        ))}
+                  <td className="px-4 py-4" ref={openRowMenu === permit.id ? menuRef : undefined}>
+                    <div className="flex items-center gap-1">
+                      <button className="p-1.5 rounded-lg hover:bg-[#eff6ff] dark:hover:bg-[rgba(59,130,246,0.1)] transition-colors" title="Edit">
+                        <Pencil className="size-3.5 text-[#3b82f6] dark:text-[#60a5fa]" />
+                      </button>
+                      <button className="p-1.5 rounded-lg hover:bg-[#fee2e2] dark:hover:bg-[#7f1d1d] transition-colors" title="Deactivate">
+                        <Trash2 className="size-3.5 text-[#ef4444] dark:text-[#f87171]" />
+                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setOpenRowMenu(openRowMenu === permit.id ? null : permit.id); }}
+                          className="p-1.5 rounded-lg text-[#6b7280] dark:text-[#94a3b8] hover:bg-[#f3f4f6] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors"
+                        >
+                          <MoreHorizontal className="size-4" />
+                        </button>
+                        {openRowMenu === permit.id && (
+                          <div className="absolute right-0 top-8 w-44 bg-white dark:bg-[#1a2d47] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-xl shadow-lg z-50 py-1 text-[13px]">
+                            {["Duplicate", "View Holders"].map((item) => (
+                              <button key={item} onClick={() => setOpenRowMenu(null)} className="w-full text-left px-4 py-2 text-[#111827] dark:text-[#e8eef5] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors">
+                                {item}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -214,161 +190,6 @@ export default function Permits() {
         </div>
       </div>
 
-      {/* ── New Permit Type slide-over ── */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <div className="flex-1 bg-black/40 dark:bg-black/60" onClick={() => setShowForm(false)} />
-
-          {/* Panel */}
-          <div className="w-[480px] bg-white dark:bg-[#0f1f35] h-full flex flex-col shadow-2xl border-l border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-            {/* Panel header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-              <h2 className="text-[16px] font-semibold text-[#111827] dark:text-[#e8eef5]">New Permit Type</h2>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[#6b7280] dark:text-[#94a3b8] hover:bg-[#f3f4f6] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors">
-                <X className="size-5" />
-              </button>
-            </div>
-
-            {/* Scrollable body */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
-
-              {/* Type code */}
-              <div>
-                <label className={labelCls}>Type Code <span className="text-[#dc2626]">*</span></label>
-                <input
-                  value={form.typeCode}
-                  onChange={(e) => setForm({ ...form, typeCode: e.target.value.toUpperCase() })}
-                  placeholder="e.g. RES-ZONE-A"
-                  className={`${inputCls} font-mono`}
-                />
-                <p className="mt-1 text-[12px] text-[#6b7280] dark:text-[#94a3b8]">Unique identifier used in policy rules</p>
-                {submitted && !form.typeCode && <p className={errCls}>Type code is required</p>}
-              </div>
-
-              {/* Name */}
-              <div>
-                <label className={labelCls}>Display Name <span className="text-[#dc2626]">*</span></label>
-                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Zone A Resident Permit" className={inputCls} />
-                {submitted && !form.name && <p className={errCls}>Name is required</p>}
-              </div>
-
-              {/* Category */}
-              <div>
-                <label className={labelCls}>Category</label>
-                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputCls}>
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-
-              {/* Zone restrictions */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className={`${labelCls} mb-0`}>Zone Restrictions <span className="text-[#dc2626]">*</span></label>
-                  <button
-                    onClick={() => setForm({ ...form, zones: new Set(form.zones.size === ZONES.length ? [] : ZONES) })}
-                    className="text-[12px] text-[#3b82f6] dark:text-[#60a5fa] hover:underline"
-                  >
-                    {form.zones.size === ZONES.length ? "Deselect all" : "All zones"}
-                  </button>
-                </div>
-                <div className="border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.2)] rounded-lg overflow-hidden">
-                  {ZONES.map((z, i) => (
-                    <label key={z} className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.4)] transition-colors ${i > 0 ? "border-t border-[#e5e7eb] dark:border-[rgba(59,130,246,0.08)]" : ""}`}>
-                      <input type="checkbox" checked={form.zones.has(z)} onChange={() => toggleZone(z)} className="size-4 accent-[#3b82f6]" />
-                      <span className="text-[13px] text-[#111827] dark:text-[#e8eef5]">{z}</span>
-                    </label>
-                  ))}
-                </div>
-                {submitted && form.zones.size === 0 && <p className={errCls}>Select at least one zone</p>}
-              </div>
-
-              {/* Validity time windows */}
-              <div>
-                <label className={labelCls}>Valid Days</label>
-                <div className="flex gap-1.5 flex-wrap">
-                  {DAYS.map((d) => (
-                    <button
-                      key={d}
-                      onClick={() => toggleDay(d)}
-                      className={`px-3 py-1.5 text-[12px] font-medium rounded-lg border transition-colors ${
-                        form.validDays.has(d)
-                          ? "bg-[#3b82f6] dark:bg-[#2563eb] text-white border-[#3b82f6]"
-                          : "border-[#e5e7eb] dark:border-[rgba(59,130,246,0.2)] text-[#6b7280] dark:text-[#94a3b8] hover:border-[#3b82f6]"
-                      }`}
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className={labelCls}>Valid From</label>
-                  <input type="time" value={form.validStart} onChange={(e) => setForm({ ...form, validStart: e.target.value })} className={inputCls} />
-                </div>
-                <div className="flex-1">
-                  <label className={labelCls}>Valid Until</label>
-                  <input type="time" value={form.validEnd} onChange={(e) => setForm({ ...form, validEnd: e.target.value })} className={inputCls} />
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className={labelCls}>Effective From</label>
-                  <input type="date" value={form.effectiveFrom} onChange={(e) => setForm({ ...form, effectiveFrom: e.target.value })} className={inputCls} />
-                </div>
-                <div className="flex-1">
-                  <label className={labelCls}>Effective To</label>
-                  <input type="date" value={form.effectiveTo} onChange={(e) => setForm({ ...form, effectiveTo: e.target.value })} className={inputCls} />
-                </div>
-              </div>
-
-              {/* Max stay override */}
-              <div>
-                <label className={labelCls}>Max Stay Override <span className="text-[12px] font-normal text-[#6b7280] dark:text-[#94a3b8]">(optional, minutes)</span></label>
-                <input type="number" min={0} value={form.maxStay} onChange={(e) => setForm({ ...form, maxStay: e.target.value })} placeholder="Leave blank to use policy default" className={inputCls} />
-                <p className="mt-1 text-[12px] text-[#6b7280] dark:text-[#94a3b8]">Enforced by <code className="bg-[#f3f4f6] dark:bg-[#1f2937] px-1 rounded">PermitMaxStayRule</code></p>
-              </div>
-
-              {/* Price */}
-              <div>
-                <label className={labelCls}>Price / Tariff Link <span className="text-[12px] font-normal text-[#6b7280] dark:text-[#94a3b8]">(optional)</span></label>
-                <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="e.g. $25.00 / month or link a Tariff" className={inputCls} />
-              </div>
-
-              {/* Exemption linkages */}
-              <div>
-                <label className={labelCls}>Exemption Linkages</label>
-                <p className="text-[12px] text-[#6b7280] dark:text-[#94a3b8] mb-2">Policies where holders of this permit type are automatically exempt</p>
-                <div className="flex flex-col gap-1.5">
-                  {EXEMPTION_POLICIES.map((p) => (
-                    <label key={p} className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] cursor-pointer hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.4)] transition-colors">
-                      <input type="checkbox" checked={form.exemptions.has(p)} onChange={() => toggleExemption(p)} className="size-4 accent-[#3b82f6]" />
-                      <span className="text-[13px] text-[#111827] dark:text-[#e8eef5]">{p}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-
-            {/* Footer */}
-            <div className="px-6 py-4 border-t border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] flex items-center justify-between gap-3">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-[13px] font-medium border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.2)] rounded-lg text-[#111827] dark:text-[#e8eef5] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors">
-                Cancel
-              </button>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setShowForm(false)} className="px-4 py-2 text-[13px] font-medium border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.2)] rounded-lg text-[#111827] dark:text-[#e8eef5] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors">
-                  Save Draft
-                </button>
-                <button onClick={handleSave} className="px-4 py-2 text-[13px] font-medium bg-[#3b82f6] dark:bg-[#2563eb] text-white rounded-lg hover:bg-[#2563eb] dark:hover:bg-[#1d4ed8] transition-colors">
-                  Create Permit Type
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
