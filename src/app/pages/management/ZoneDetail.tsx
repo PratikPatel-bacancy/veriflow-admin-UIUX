@@ -73,16 +73,10 @@ export default function ZoneDetail() {
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-[#0f1f35] rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6">
-            <p className="text-sm text-[#6b7280] dark:text-[#94a3b8] mb-1">Occupancy Rate</p>
-            <p className="text-3xl font-semibold text-[#111827] dark:text-[#e8eef5]">95%</p>
-          </div>
-          <div className="bg-white dark:bg-[#0f1f35] rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#d1fae5] text-[#065f46]">
-              Active
-            </span>
-          </div>
+        <div className="bg-white dark:bg-[#0f1f35] rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6 flex items-center">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#d1fae5] text-[#065f46]">
+            Active
+          </span>
         </div>
       </div>
 
@@ -154,7 +148,6 @@ export default function ZoneDetail() {
               <tr className="bg-[#eff6ff] dark:bg-[#0a1628] border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
                 <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">Parking Lot Name</th>
                 <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">Parking Lot Size</th>
-                <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">Occupancy</th>
               </tr>
             </thead>
             <tbody>
@@ -162,17 +155,6 @@ export default function ZoneDetail() {
                 <tr key={lot.id} className="border-b border-[#e5e7eb] hover:bg-[#eff6ff] dark:hover:bg-[rgba(30,58,95,0.3)]">
                   <td className="px-6 py-4 text-[14px] font-medium text-[#111827] dark:text-[#e8eef5]">{lot.name}</td>
                   <td className="px-6 py-4 text-[14px] text-[#6b7280] dark:text-[#94a3b8]">{lot.size} stalls</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 bg-[#e5e7eb] rounded-full h-2">
-                        <div
-                          className="h-2 rounded-full bg-[#3b82f6]"
-                          style={{ width: `${lot.occupancy}%` }}
-                        />
-                      </div>
-                      <span className="text-[14px] text-[#6b7280] dark:text-[#94a3b8] min-w-[40px]">{lot.occupancy}%</span>
-                    </div>
-                  </td>
                 </tr>
               ))}
             </tbody>

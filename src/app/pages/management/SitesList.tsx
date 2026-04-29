@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Plus, Eye, Trash2, Info } from "lucide-react";
+import { Plus, Eye, Trash2, Info, Search, Filter } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/app/components/ui/tooltip";
 
 const mockSites = [
@@ -59,15 +59,14 @@ const mockSites = [
 export default function SitesList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState("All Plans");
-  const [selectedStatus, setSelectedStatus] = useState("All Status");
+  const [selectedStatus, setSelectedStatus] = useState("All");
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
 
   // Filter sites based on search and filters
   const filteredSites = mockSites.filter(site => {
     const matchesSearch = site.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPlan = selectedPlan === "All Plans" || site.plan === selectedPlan;
-    const matchesStatus = selectedStatus === "All Status" || site.status === selectedStatus;
-    return matchesSearch && matchesPlan && matchesStatus;
+    const matchesStatus = selectedStatus === "All" || site.status === selectedStatus;
+    return matchesSearch && matchesStatus;
   });
 
   const totalZones = mockSites.reduce((sum, site) => sum + site.zones, 0);
@@ -149,27 +148,51 @@ export default function SitesList() {
           </div>
         </div>
 
-        {/* Filter + Search Bar */}
+        {/* Search Bar */}
         <div className="px-8 mb-6">
-          <div className="flex items-center gap-3">
-            <input
-              type="text"
-              placeholder="Search Sites"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 px-4 py-2 border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg text-[14px] bg-white dark:bg-[#0f1f35] text-[#111827] dark:text-[#e8eef5] placeholder:text-[#6b7280] dark:text-[#94a3b8] dark:placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent"
-            />
-            
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-4 py-2 border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg text-[14px] bg-white dark:bg-[#0f1f35] text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent"
-            >
-              <option>All Status</option>
-              <option>Active</option>
-              <option>Trial</option>
-              <option>Suspended</option>
-            </select>
+          <div className="bg-white dark:bg-[#0f1f35] rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#6b7280] dark:text-[#94a3b8]" />
+                <input
+                  type="text"
+                  placeholder="Search sites..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-[#f9fafb] dark:bg-[#0a1628] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg pl-10 pr-4 py-2 text-sm text-[#111827] dark:text-[#e8eef5] placeholder:text-[#6b7280] dark:placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent"
+                />
+              </div>
+              <div className="relative">
+                <button
+                  onClick={() => setShowFilterMenu((v) => !v)}
+                  className={`border rounded-lg px-4 py-2 flex items-center gap-2 text-sm transition-colors ${
+                    selectedStatus !== "All"
+                      ? "border-[#3b82f6] text-[#3b82f6] bg-[#eff6ff] dark:bg-[rgba(59,130,246,0.1)] dark:border-[#3b82f6] dark:text-[#60a5fa]"
+                      : "border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] text-[#111827] dark:text-[#e8eef5] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)]"
+                  }`}
+                >
+                  <Filter className="size-4" />
+                  {selectedStatus === "All" ? "Filter" : selectedStatus}
+                </button>
+                {showFilterMenu && (
+                  <div className="absolute right-0 top-10 w-40 bg-white dark:bg-[#1a2d47] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-xl shadow-lg z-20 py-1 text-[13px]">
+                    {["All", "Active", "Trial", "Suspended"].map((opt) => (
+                      <button
+                        key={opt}
+                        onClick={() => { setSelectedStatus(opt); setShowFilterMenu(false); }}
+                        className={`w-full text-left px-4 py-2 transition-colors ${
+                          selectedStatus === opt
+                            ? "text-[#3b82f6] dark:text-[#60a5fa] bg-[#eff6ff] dark:bg-[rgba(59,130,246,0.1)]"
+                            : "text-[#111827] dark:text-[#e8eef5] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)]"
+                        }`}
+                      >
+                        {opt === "All" ? "All Statuses" : opt}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

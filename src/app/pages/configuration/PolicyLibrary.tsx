@@ -207,96 +207,28 @@ export default function PolicyLibrary() {
         </button>
       </div>
 
-      {/* ── KPI Row ── */}
-      <div className="px-8 pt-6">
-        <div className="grid grid-cols-4 gap-5">
-          {[
-            {
-              label: "Total Templates",
-              value: TEMPLATES.length,
-              iconBg: "bg-[#ede9fe] dark:bg-[#4c1d95]",
-              icon: <Layers className="size-5 text-[#7c3aed] dark:text-[#a78bfa]" />,
-              tooltip: "Total number of policy templates available — includes all 12 built-in system templates and any custom templates created by your team.",
-            },
-            {
-              label: "Time-Limit",
-              value: TEMPLATES.filter(t => t.category === "Time-Limit").length,
-              iconBg: "bg-[#dbeafe] dark:bg-[#1e3a8a]",
-              icon: <Clock className="size-5 text-[#3b82f6] dark:text-[#60a5fa]" />,
-              tooltip: "Templates that enforce a maximum dwell time (e.g. 30-min, 1-hour, 2-hour). Best used in high-turnover zones, retail areas, or short-term visitor stalls.",
-            },
-            {
-              label: "Permit & Access",
-              value: TEMPLATES.filter(t => ["Permit","Accessible"].includes(t.category)).length,
-              iconBg: "bg-[#d1fae5] dark:bg-[#065f46]",
-              icon: <Key className="size-5 text-[#16a34a] dark:text-[#6ee7b7]" />,
-              tooltip: "Templates that restrict parking to specific permit types or accessibility requirements — includes Permit-Only and Handicap Stall templates.",
-            },
-            {
-              label: "Restriction & EV",
-              value: TEMPLATES.filter(t => ["Restriction","EV","Commercial","Loading","Payment"].includes(t.category)).length,
-              iconBg: "bg-[#fee2e2] dark:bg-[#7f1d1d]",
-              icon: <Ban className="size-5 text-[#dc2626] dark:text-[#f87171]" />,
-              tooltip: "Templates covering special-use restrictions: No Stopping, EV-Only charging enforcement, Commercial-Only, Loading zones, and Pay-to-Park metered areas.",
-            },
-          ].map(({ label, value, iconBg, icon, tooltip }) => (
-            <div
-              key={label}
-              className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm relative"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className={`${iconBg} rounded-lg p-2.5`}>{icon}</div>
-                <div className="group relative">
-                  <Info className="size-4 text-[#6b7280] dark:text-[#94a3b8] cursor-help" />
-                  <div className="invisible group-hover:visible absolute right-0 top-6 w-64 bg-[#111827] dark:bg-[#1a2d47] text-white dark:text-[#e8eef5] text-xs rounded-lg px-3 py-2 shadow-lg z-50 border border-transparent dark:border-[rgba(59,130,246,0.15)] leading-relaxed">
-                    {tooltip}
-                  </div>
-                </div>
-              </div>
-              <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">
-                {value}
-              </p>
-              <p className="font-['Inter'] text-[13px] text-[#6b7280] dark:text-[#94a3b8] mt-1">{label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* ── Search + Category Filter ── */}
       <div className="px-8 pt-6">
-        <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-4 shadow-sm flex items-center gap-4 flex-wrap">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#6b7280] dark:text-[#94a3b8]" />
+        <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-4 shadow-sm flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#9ca3af]" />
             <input
               type="text"
               placeholder="Search templates…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-[#f9fafb] dark:bg-[#0a1628] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg pl-9 pr-4 py-2 text-[14px] text-[#111827] dark:text-[#e8eef5] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent"
+              className="w-full pl-9 pr-3 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.2)] rounded-lg bg-transparent text-[#111827] dark:text-[#e8eef5] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
             />
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={activeCategory}
+            onChange={(e) => setActiveCategory(e.target.value)}
+            className="px-4 py-2 text-[14px] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg bg-white dark:bg-[#0f1f35] text-[#111827] dark:text-[#e8eef5] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+          >
             {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors ${
-                  activeCategory === cat
-                    ? "bg-[#3b82f6] text-white"
-                    : "bg-[#f3f4f6] dark:bg-[#1a2d47] text-[#374151] dark:text-[#94a3b8] hover:bg-[#e5e7eb] dark:hover:bg-[rgba(30,58,95,0.7)]"
-                }`}
-              >
-                {cat}
-                <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-semibold ${
-                  activeCategory === cat
-                    ? "bg-white/20 text-white"
-                    : "bg-[#e5e7eb] dark:bg-[rgba(59,130,246,0.15)] text-[#6b7280] dark:text-[#94a3b8]"
-                }`}>
-                  {categoryCounts[cat]}
-                </span>
-              </button>
+              <option key={cat} value={cat}>{cat === "All" ? "All Categories" : cat}</option>
             ))}
-          </div>
+          </select>
         </div>
       </div>
 

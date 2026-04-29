@@ -20,6 +20,7 @@ import {
   ClipboardList,
   CalendarClock,
   Layers,
+  Car,
 } from "lucide-react";
 
 interface NavItem {
@@ -52,16 +53,18 @@ const navigationSections: NavSection[] = [
         label: "Sites",
         path: "/management/sites",
         icon: <MapPin className="size-5" />,
-      },
-      {
-        label: "Zones",
-        path: "/management/zones",
-        icon: <Map className="size-5" />,
         children: [
           {
-            label: "Parking Lots",
-            path: "/management/parking-lots",
-            icon: <Warehouse className="size-4" />,
+            label: "Zones",
+            path: "/management/zones",
+            icon: <Map className="size-4" />,
+            children: [
+              {
+                label: "Parking Lots",
+                path: "/management/parking-lots",
+                icon: <Warehouse className="size-4" />,
+              },
+            ],
           },
         ],
       },
@@ -94,6 +97,11 @@ const navigationSections: NavSection[] = [
         label: "Devices",
         path: "/operations/devices",
         icon: <Tablet className="size-5" />,
+      },
+      {
+        label: "Enforcement Vehicles",
+        path: "/operations/enforcement-vehicles",
+        icon: <Car className="size-5" />,
       },
     ],
   },
@@ -240,24 +248,46 @@ export default function Sidebar({ isCollapsed = false }: SidebarProps) {
                         </span>
                       )}
                     </Link>
-                    {/* Sub-items */}
+                    {/* Level-1 children */}
                     {item.children && !isCollapsed && (
                       <div className="flex flex-col gap-1 mt-1">
                         {item.children.map((child, childIndex) => (
-                          <Link
-                            key={childIndex}
-                            to={child.path}
-                            className={`flex items-center gap-3 pl-11 pr-3 py-2 rounded-lg transition-colors ${
-                              isActive(child.path)
-                                ? "bg-[#dbeafe] dark:bg-[#1e3a8a] text-[#3b82f6] dark:text-[#93c5fd]"
-                                : "text-[#6b7280] dark:text-[#94a3b8] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] hover:text-[#111827] dark:hover:text-[#f3f4f6]"
-                            }`}
-                          >
-                            {child.icon}
-                            <span className="font-medium text-sm tracking-tight whitespace-nowrap">
-                              {child.label}
-                            </span>
-                          </Link>
+                          <div key={childIndex}>
+                            <Link
+                              to={child.path}
+                              className={`flex items-center gap-3 pl-11 pr-3 py-2 rounded-lg transition-colors ${
+                                isActive(child.path)
+                                  ? "bg-[#dbeafe] dark:bg-[#1e3a8a] text-[#3b82f6] dark:text-[#93c5fd]"
+                                  : "text-[#6b7280] dark:text-[#94a3b8] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] hover:text-[#111827] dark:hover:text-[#f3f4f6]"
+                              }`}
+                            >
+                              {child.icon}
+                              <span className="font-medium text-sm tracking-tight whitespace-nowrap">
+                                {child.label}
+                              </span>
+                            </Link>
+                            {/* Level-2 grandchildren */}
+                            {child.children && (
+                              <div className="flex flex-col gap-1 mt-1">
+                                {child.children.map((grand, grandIndex) => (
+                                  <Link
+                                    key={grandIndex}
+                                    to={grand.path}
+                                    className={`flex items-center gap-3 pl-[3.75rem] pr-3 py-2 rounded-lg transition-colors ${
+                                      isActive(grand.path)
+                                        ? "bg-[#dbeafe] dark:bg-[#1e3a8a] text-[#3b82f6] dark:text-[#93c5fd]"
+                                        : "text-[#6b7280] dark:text-[#94a3b8] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)] hover:text-[#111827] dark:hover:text-[#f3f4f6]"
+                                    }`}
+                                  >
+                                    {grand.icon}
+                                    <span className="font-medium text-sm tracking-tight whitespace-nowrap">
+                                      {grand.label}
+                                    </span>
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
                     )}

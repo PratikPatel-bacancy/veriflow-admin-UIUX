@@ -225,9 +225,6 @@ export default function SiteDetail() {
                     Capacity
                   </th>
                   <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
-                    Occupancy
-                  </th>
-                  <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
                     Status
                   </th>
                 </tr>
@@ -248,23 +245,6 @@ export default function SiteDetail() {
                     </td>
                     <td className="px-6 py-4 text-[14px] text-[#6b7280] dark:text-[#94a3b8]">
                       {zone.capacity}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 bg-[#e5e7eb] dark:bg-[#1a2d47] rounded-full h-1.5">
-                          <div
-                            className={`h-1.5 rounded-full ${
-                              zone.occupancy >= 90 ? 'bg-[#dc2626]' :
-                              zone.occupancy >= 75 ? 'bg-[#ea580c]' :
-                              'bg-[#16a34a]'
-                            }`}
-                            style={{ width: `${zone.occupancy}%` }}
-                          />
-                        </div>
-                        <span className="text-[12px] text-[#6b7280] dark:text-[#94a3b8]">
-                          {zone.occupancy}%
-                        </span>
-                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium bg-[#d1fae5] dark:bg-[#065f46] text-[#065f46] dark:text-[#34d399]">
