@@ -20,8 +20,6 @@ import Compliance from "./pages/operations/Compliance";
 import EnforcementVehicles from "./pages/operations/EnforcementVehicles";
 import AddEnforcementVehicle from "./pages/operations/AddEnforcementVehicle";
 import EnforcementVehicleDetail from "./pages/operations/EnforcementVehicleDetail";
-import Reports from "./pages/analytics/Reports";
-import UsageStatistics from "./pages/analytics/UsageStatistics";
 import PolicyLibrary from "./pages/configuration/PolicyLibrary";
 import PolicyAssignments from "./pages/configuration/PolicyAssignments";
 import PoliciesHome from "./pages/configuration/PoliciesHome";
@@ -131,14 +129,6 @@ export const router = createBrowserRouter([
       {
         path: "operations/enforcement-vehicles/:id",
         Component: EnforcementVehicleDetail,
-      },
-      {
-        path: "analytics/reports",
-        Component: Reports,
-      },
-      {
-        path: "analytics/usage",
-        Component: UsageStatistics,
       },
       {
         path: "configuration/policies",

@@ -73,7 +73,7 @@ const RULE_TYPES = [
   { value: "fire-hydrant-clearance", label: "Fire Hydrant Clearance" },
 ];
 
-const COMPATIBLE_ASSETS = ["Zone", "Stall", "Level"];
+const COMPATIBLE_ASSETS = ["Zone"];
 
 const EXEMPTION_OPTIONS = [
   { key: "handicap", label: "Handicap (plate or placard)" },
@@ -160,7 +160,7 @@ export default function CustomTemplateBuilder() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Time-Limit");
   const [ruleType, setRuleType] = useState("time-limit");
-  const [compatible, setCompatible] = useState<Set<string>>(new Set(["Zone", "Stall"]));
+  const [compatible, setCompatible] = useState<Set<string>>(new Set(["Zone"]));
 
   // ② Parameters — seeded from rule type schema, override-able
   const baseParams = RULE_TYPE_PARAMS[ruleType] ?? [];

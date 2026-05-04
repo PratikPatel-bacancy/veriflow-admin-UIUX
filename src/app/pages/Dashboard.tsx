@@ -1,3 +1,4 @@
+import "leaflet/dist/leaflet.css";
 import { Link } from "react-router";
 import { useState, useMemo } from "react";
 import {
@@ -10,14 +11,7 @@ import {
   Building2,
   MapPin,
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-} from "recharts";
+import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 
 // ── Live Map data ─────────────────────────────────────────────────────────
 
@@ -76,26 +70,19 @@ const SITE_LABELS: Record<string, string> = {
   "pan-pacific":     "Pan Pacific Park Parking",
 };
 
-const CITY_PINS = [
-  { site: "pacific-plaza",   x: 31, y: 37 },
-  { site: "pacific-centre",  x: 54, y: 21 },
-  { site: "heritage-harbor", x: 73, y: 51 },
-  { site: "pacific-beach",   x: 39, y: 68 },
-  { site: "pan-pacific",     x: 13, y: 54 },
-];
+const SITE_COORDS: Record<string, [number, number]> = {
+  "pacific-plaza":   [37.7749, -122.4194],
+  "pacific-centre":  [37.7849, -122.4050],
+  "heritage-harbor": [37.7699, -122.3920],
+  "pacific-beach":   [37.7580, -122.4380],
+  "pan-pacific":     [37.7820, -122.4480],
+};
 
 const STALL_CLR: Record<StallStatus, string> = {
   compliant: "#16a34a",
   warning:   "#ea580c",
   violation: "#dc2626",
   empty:     "#d1d5db",
-};
-
-const STALL_DARK_CLR: Record<StallStatus, string> = {
-  compliant: "#34d399",
-  warning:   "#fb923c",
-  violation: "#f87171",
-  empty:     "#374151",
 };
 
 function siteAggStatus(site: string): StallStatus {
@@ -111,7 +98,6 @@ function siteAggStatus(site: string): StallStatus {
 export default function Dashboard() {
   const [selectedSite, setSelectedSite] = useState("all");
   const [selectedZone, setSelectedZone] = useState("all");
-  const [hoveredPin, setHoveredPin] = useState<string | null>(null);
 
   const activeRows = selectedSite !== "all" ? (SITE_ROWS[selectedSite] ?? []) : [];
 
@@ -128,40 +114,6 @@ export default function Dashboard() {
     });
     return { compliant: c, warning: w, violation: v };
   }, [selectedSite, selectedZone, activeRows]);
-
-  // Revenue data for April 1-30 with realistic fluctuations
-  const revenueData = [
-    { date: "Apr 1", day: 1, revenue: 180 },
-    { date: "Apr 2", day: 2, revenue: 265 },
-    { date: "Apr 3", day: 3, revenue: 310 },
-    { date: "Apr 4", day: 4, revenue: 290 },
-    { date: "Apr 5", day: 5, revenue: 95 },
-    { date: "Apr 6", day: 6, revenue: 60 },
-    { date: "Apr 7", day: 7, revenue: 230 },
-    { date: "Apr 8", day: 8, revenue: 275 },
-    { date: "Apr 9", day: 9, revenue: 190 },
-    { date: "Apr 10", day: 10, revenue: 320 },
-    { date: "Apr 11", day: 11, revenue: 340 },
-    { date: "Apr 12", day: 12, revenue: 80 },
-    { date: "Apr 13", day: 13, revenue: 55 },
-    { date: "Apr 14", day: 14, revenue: 240 },
-    { date: "Apr 15", day: 15, revenue: 285 },
-    { date: "Apr 16", day: 16, revenue: 330 },
-    { date: "Apr 17", day: 17, revenue: 210 },
-    { date: "Apr 18", day: 18, revenue: 360 },
-    { date: "Apr 19", day: 19, revenue: 90 },
-    { date: "Apr 20", day: 20, revenue: 65 },
-    { date: "Apr 21", day: 21, revenue: 195 },
-    { date: "Apr 22", day: 22, revenue: 270 },
-    { date: "Apr 23", day: 23, revenue: 315 },
-    { date: "Apr 24", day: 24, revenue: 220 },
-    { date: "Apr 25", day: 25, revenue: 380 },
-    { date: "Apr 26", day: 26, revenue: 100 },
-    { date: "Apr 27", day: 27, revenue: 70 },
-    { date: "Apr 28", day: 28, revenue: 250 },
-    { date: "Apr 29", day: 29, revenue: 295 },
-    { date: "Apr 30", day: 30, revenue: 310 },
-  ];
 
   return (
     <div className="flex-1 overflow-auto bg-[#eff6ff] dark:bg-[#0a1628] pb-6">
@@ -388,449 +340,66 @@ export default function Dashboard() {
           </div>
 
           {/* Live Map */}
-          <div className="relative bg-[#f5f5f0] dark:bg-[#0f172a] rounded-lg h-[320px] overflow-hidden">
-            {/* ── City overview (All Sites) ── */}
-            {selectedSite === "all" && <>
-            {/* Street Grid Pattern */}
-            <svg
-              className="absolute inset-0 w-full h-full"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* Base Map Background */}
-              <rect width="100%" height="100%" fill="#f8f7f4" />
-
-              {/* Green Park Areas */}
-              <ellipse
-                cx="15%"
-                cy="35%"
-                rx="8%"
-                ry="12%"
-                fill="#c8e6c9"
-                opacity="0.7"
-              />
-              <rect
-                x="5%"
-                y="60%"
-                width="12%"
-                height="18%"
-                fill="#c8e6c9"
-                opacity="0.7"
-                rx="2"
-              />
-              <polygon
-                points="65,5 85,15 78,35 55,30"
-                fill="#c8e6c9"
-                opacity="0.7"
-              />
-              <ellipse
-                cx="85%"
-                cy="25%"
-                rx="10%"
-                ry="8%"
-                fill="#c8e6c9"
-                opacity="0.7"
-              />
-
-              {/* Water/River Area - Right Side */}
-              <path
-                d="M 85 0 Q 88 50 92 100 Q 94 150 96 200 L 100 200 L 100 0 Z"
-                fill="#b3d9ff"
-                opacity="0.4"
-                transform="scale(1, 1.6)"
-              />
-
-              {/* Major Streets - Diagonal and Grid */}
-              <line
-                x1="0"
-                y1="25%"
-                x2="100%"
-                y2="25%"
-                stroke="#d4d4d8"
-                strokeWidth="3"
-              />
-              <line
-                x1="0"
-                y1="50%"
-                x2="100%"
-                y2="50%"
-                stroke="#d4d4d8"
-                strokeWidth="4"
-              />
-              <line
-                x1="0"
-                y1="75%"
-                x2="100%"
-                y2="75%"
-                stroke="#d4d4d8"
-                strokeWidth="3"
-              />
-
-              <line
-                x1="20%"
-                y1="0"
-                x2="20%"
-                y2="100%"
-                stroke="#d4d4d8"
-                strokeWidth="2.5"
-              />
-              <line
-                x1="40%"
-                y1="0"
-                x2="40%"
-                y2="100%"
-                stroke="#d4d4d8"
-                strokeWidth="2.5"
-              />
-              <line
-                x1="60%"
-                y1="0"
-                x2="60%"
-                y2="100%"
-                stroke="#d4d4d8"
-                strokeWidth="3"
-              />
-              <line
-                x1="80%"
-                y1="0"
-                x2="80%"
-                y2="100%"
-                stroke="#d4d4d8"
-                strokeWidth="2.5"
-              />
-
-              {/* Diagonal Streets for Realism */}
-              <line
-                x1="0"
-                y1="0"
-                x2="30%"
-                y2="100%"
-                stroke="#e4e4e7"
-                strokeWidth="2"
-              />
-              <line
-                x1="70%"
-                y1="0"
-                x2="100%"
-                y2="80%"
-                stroke="#e4e4e7"
-                strokeWidth="2"
-              />
-              <line
-                x1="10%"
-                y1="30%"
-                x2="90%"
-                y2="70%"
-                stroke="#e4e4e7"
-                strokeWidth="2.5"
-              />
-
-              {/* Minor Streets */}
-              <line
-                x1="0"
-                y1="12%"
-                x2="85%"
-                y2="12%"
-                stroke="#e8e8e6"
-                strokeWidth="1.5"
-                opacity="0.7"
-              />
-              <line
-                x1="0"
-                y1="37%"
-                x2="85%"
-                y2="37%"
-                stroke="#e8e8e6"
-                strokeWidth="1.5"
-                opacity="0.7"
-              />
-              <line
-                x1="0"
-                y1="62%"
-                x2="85%"
-                y2="62%"
-                stroke="#e8e8e6"
-                strokeWidth="1.5"
-                opacity="0.7"
-              />
-              <line
-                x1="0"
-                y1="87%"
-                x2="85%"
-                y2="87%"
-                stroke="#e8e8e6"
-                strokeWidth="1.5"
-                opacity="0.7"
-              />
-
-              <line
-                x1="10%"
-                y1="0"
-                x2="10%"
-                y2="100%"
-                stroke="#e8e8e6"
-                strokeWidth="1.5"
-                opacity="0.7"
-              />
-              <line
-                x1="30%"
-                y1="0"
-                x2="30%"
-                y2="100%"
-                stroke="#e8e8e6"
-                strokeWidth="1.5"
-                opacity="0.7"
-              />
-              <line
-                x1="50%"
-                y1="0"
-                x2="50%"
-                y2="100%"
-                stroke="#e8e8e6"
-                strokeWidth="1.5"
-                opacity="0.7"
-              />
-              <line
-                x1="70%"
-                y1="0"
-                x2="70%"
-                y2="100%"
-                stroke="#e8e8e6"
-                strokeWidth="1.5"
-                opacity="0.7"
-              />
-
-              {/* Building Blocks - More Natural Shapes */}
-              <rect
-                x="22%"
-                y="3%"
-                width="16%"
-                height="9%"
-                fill="#e8e8e4"
-                opacity="0.6"
-                rx="1"
-              />
-              <rect
-                x="42%"
-                y="5%"
-                width="12%"
-                height="7%"
-                fill="#e8e8e4"
-                opacity="0.6"
-                rx="1"
-              />
-              <rect
-                x="62%"
-                y="2%"
-                width="15%"
-                height="10%"
-                fill="#e8e8e4"
-                opacity="0.6"
-                rx="1"
-              />
-
-              <rect
-                x="3%"
-                y="27%"
-                width="10%"
-                height="10%"
-                fill="#e8e8e4"
-                opacity="0.6"
-                rx="1"
-              />
-              <rect
-                x="22%"
-                y="28%"
-                width="14%"
-                height="8%"
-                fill="#e8e8e4"
-                opacity="0.6"
-                rx="1"
-              />
-              <rect
-                x="42%"
-                y="26%"
-                width="16%"
-                height="11%"
-                fill="#e8e8e4"
-                opacity="0.6"
-                rx="1"
-              />
-              <rect
-                x="65%"
-                y="28%"
-                width="11%"
-                height="9%"
-                fill="#e8e8e4"
-                opacity="0.6"
-                rx="1"
-              />
-
-              <rect
-                x="22%"
-                y="52%"
-                width="12%"
-                height="10%"
-                fill="#e8e8e4"
-                opacity="0.6"
-                rx="1"
-              />
-              <rect
-                x="42%"
-                y="53%"
-                width="15%"
-                height="9%"
-                fill="#e8e8e4"
-                opacity="0.6"
-                rx="1"
-              />
-              <rect
-                x="62%"
-                y="51%"
-                width="13%"
-                height="11%"
-                fill="#e8e8e4"
-                opacity="0.6"
-                rx="1"
-              />
-
-              <rect
-                x="22%"
-                y="77%"
-                width="14%"
-                height="8%"
-                fill="#e8e8e4"
-                opacity="0.6"
-                rx="1"
-              />
-              <rect
-                x="42%"
-                y="76%"
-                width="11%"
-                height="10%"
-                fill="#e8e8e4"
-                opacity="0.6"
-                rx="1"
-              />
-              <rect
-                x="62%"
-                y="78%"
-                width="15%"
-                height="9%"
-                fill="#e8e8e4"
-                opacity="0.6"
-                rx="1"
-              />
-
-              {/* Street Labels */}
-              <text
-                x="5%"
-                y="24%"
-                fill="#71717a"
-                fontSize="7"
-                fontFamily="Inter"
-              >
-                Broadway
-              </text>
-              <text
-                x="5%"
-                y="49%"
-                fill="#71717a"
-                fontSize="7"
-                fontFamily="Inter"
-              >
-                Main Street
-              </text>
-              <text
-                x="5%"
-                y="74%"
-                fill="#71717a"
-                fontSize="7"
-                fontFamily="Inter"
-              >
-                Pacific Ave
-              </text>
-
-              {/* District Labels */}
-              <text
-                x="25%"
-                y="18%"
-                fill="#52525b"
-                fontSize="8"
-                fontWeight="500"
-                fontFamily="Inter"
-              >
-                Downtown
-              </text>
-              <text
-                x="50%"
-                y="43%"
-                fill="#52525b"
-                fontSize="8"
-                fontWeight="500"
-                fontFamily="Inter"
-              >
-                Financial District
-              </text>
-              <text
-                x="8%"
-                y="70%"
-                fill="#52525b"
-                fontSize="7"
-                fontWeight="500"
-                fontFamily="Inter"
-              >
-                Civic Center
-              </text>
-            </svg>
-
-            {/* Dynamic site pins — city overview */}
-            {CITY_PINS.map((pin) => {
-              const aggStatus = siteAggStatus(pin.site);
-              const rows = SITE_ROWS[pin.site] ?? [];
-              const zoneMatch = selectedZone === "all" || rows.some((r) => r.zone === selectedZone);
-              const isHovered = hoveredPin === pin.site;
-              const pinStalls = rows.flatMap((r) => genStalls(r.count, r.seed));
-              const pinC = pinStalls.filter((s) => s === "compliant").length;
-              const pinW = pinStalls.filter((s) => s === "warning").length;
-              const pinV = pinStalls.filter((s) => s === "violation").length;
-              return (
-                <div
-                  key={pin.site}
-                  style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
-                  className={`absolute group transition-opacity ${!zoneMatch ? "opacity-20" : ""}`}
-                  onMouseEnter={() => setHoveredPin(pin.site)}
-                  onMouseLeave={() => setHoveredPin(null)}
+          <div className="relative rounded-lg h-[320px] overflow-hidden">
+            {/* ── All Sites: Leaflet Map ── */}
+            {selectedSite === "all" && (
+              <>
+                <MapContainer
+                  center={[37.775, -122.420]}
+                  zoom={13}
+                  style={{ height: "100%", width: "100%" }}
+                  scrollWheelZoom={false}
+                  className="z-0"
                 >
-                  {/* Pin dot */}
-                  <div
-                    style={{ backgroundColor: STALL_CLR[aggStatus] }}
-                    className={`size-4 rounded-full border-2 border-white shadow-lg cursor-pointer transition-transform ${isHovered ? "scale-125" : ""}`}
+                  <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                    attribution=""
                   />
-                  {/* Tooltip */}
-                  {isHovered && (
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-44 bg-[#111827] dark:bg-[#1a2d47] text-white text-[11px] rounded-lg px-3 py-2 shadow-xl z-20 border border-[rgba(59,130,246,0.2)] pointer-events-none">
-                      <p className="font-semibold mb-1.5 truncate">{SITE_LABELS[pin.site]}</p>
-                      <div className="flex items-center gap-2.5">
-                        <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-[#16a34a] inline-block" />{pinC}</span>
-                        <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-[#ea580c] inline-block" />{pinW}</span>
-                        <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-[#dc2626] inline-block" />{pinV}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                  {Object.entries(SITE_COORDS).map(([siteKey, coords]) => {
+                    const aggStatus = siteAggStatus(siteKey);
+                    const rows = SITE_ROWS[siteKey] ?? [];
+                    const zoneMatch = selectedZone === "all" || rows.some((r) => r.zone === selectedZone);
+                    const pinStalls = rows.flatMap((r) => genStalls(r.count, r.seed));
+                    const pinC = pinStalls.filter((s) => s === "compliant").length;
+                    const pinW = pinStalls.filter((s) => s === "warning").length;
+                    const pinV = pinStalls.filter((s) => s === "violation").length;
+                    return (
+                      <CircleMarker
+                        key={siteKey}
+                        center={coords}
+                        radius={13}
+                        pathOptions={{
+                          color: "white",
+                          weight: 2.5,
+                          fillColor: STALL_CLR[aggStatus],
+                          fillOpacity: zoneMatch ? 1 : 0.25,
+                        }}
+                        eventHandlers={{ click: () => setSelectedSite(siteKey) }}
+                      >
+                        <Popup>
+                          <div style={{ minWidth: 148 }}>
+                            <p style={{ fontWeight: 600, marginBottom: 6 }}>{SITE_LABELS[siteKey]}</p>
+                            <p style={{ color: "#16a34a", marginBottom: 2 }}>✓ {pinC} compliant</p>
+                            <p style={{ color: "#ea580c", marginBottom: 2 }}>⚠ {pinW} warning</p>
+                            <p style={{ color: "#dc2626" }}>✕ {pinV} violation</p>
+                          </div>
+                        </Popup>
+                      </CircleMarker>
+                    );
+                  })}
+                </MapContainer>
 
-            {/* Stats overlay — bottom left */}
-            <div className="absolute bottom-3 left-3 bg-white/90 dark:bg-[#0f1f35]/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-[11px] font-sans flex items-center gap-3 shadow">
-              <span className="flex items-center gap-1 text-[#16a34a] dark:text-[#34d399] font-medium"><span className="size-1.5 rounded-full bg-[#16a34a] dark:bg-[#34d399] inline-block" />{mapStats.compliant}</span>
-              <span className="flex items-center gap-1 text-[#ea580c] dark:text-[#fb923c] font-medium"><span className="size-1.5 rounded-full bg-[#ea580c] dark:bg-[#fb923c] inline-block" />{mapStats.warning}</span>
-              <span className="flex items-center gap-1 text-[#dc2626] dark:text-[#f87171] font-medium"><span className="size-1.5 rounded-full bg-[#dc2626] dark:bg-[#f87171] inline-block" />{mapStats.violation}</span>
-            </div>
-            <div className="absolute bottom-3 right-3 bg-white/90 dark:bg-[#0f1f35]/90 backdrop-blur-sm px-2 py-1 rounded text-[11px] font-sans text-[#6b7280] dark:text-[#94a3b8]">
-              5 sites monitored
-            </div>
-            </>}
+                {/* Stats overlay — bottom left */}
+                <div className="absolute bottom-3 left-3 z-[1000] bg-white/90 dark:bg-[#0f1f35]/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-[11px] font-sans flex items-center gap-3 shadow">
+                  <span className="flex items-center gap-1 text-[#16a34a] dark:text-[#34d399] font-medium"><span className="size-1.5 rounded-full bg-[#16a34a] dark:bg-[#34d399] inline-block" />{mapStats.compliant}</span>
+                  <span className="flex items-center gap-1 text-[#ea580c] dark:text-[#fb923c] font-medium"><span className="size-1.5 rounded-full bg-[#ea580c] dark:bg-[#fb923c] inline-block" />{mapStats.warning}</span>
+                  <span className="flex items-center gap-1 text-[#dc2626] dark:text-[#f87171] font-medium"><span className="size-1.5 rounded-full bg-[#dc2626] dark:bg-[#f87171] inline-block" />{mapStats.violation}</span>
+                </div>
+                <div className="absolute bottom-3 right-3 z-[1000] bg-white/90 dark:bg-[#0f1f35]/90 backdrop-blur-sm px-2 py-1 rounded text-[11px] font-sans text-[#6b7280] dark:text-[#94a3b8]">
+                  5 sites monitored
+                </div>
+              </>
+            )}
 
             {/* ── Site floor plan (specific site selected) ── */}
             {selectedSite !== "all" && (
@@ -893,12 +462,23 @@ export default function Dashboard() {
       <div className="px-8 mb-6">
         <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-            <h2 className="font-sans font-semibold text-[16px] text-[#111827] dark:text-[#e8eef5]">
-              Site Overview
-            </h2>
-            <button className="text-[13px] font-medium text-[#3b82f6] dark:text-[#60a5fa] hover:text-[#2563eb] dark:hover:text-[#93c5fd]">
+            <div className="flex items-center gap-2">
+              <h2 className="font-sans font-semibold text-[16px] text-[#111827] dark:text-[#e8eef5]">
+                Site Overview
+              </h2>
+              <div className="group relative">
+                <Info className="size-4 text-[#6b7280] dark:text-[#94a3b8] cursor-help" />
+                <div className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 top-6 w-64 bg-[#111827] dark:bg-[#1a2d47] text-white dark:text-[#e8eef5] text-xs rounded-lg px-3 py-2 shadow-lg z-50 border border-transparent dark:border-[rgba(59,130,246,0.15)]">
+                  A summary of all registered parking sites, their zone counts, active devices, and current operational status.
+                </div>
+              </div>
+            </div>
+            <Link
+              to="/management/sites"
+              className="text-[13px] font-medium text-[#3b82f6] dark:text-[#60a5fa] hover:text-[#2563eb] dark:hover:text-[#93c5fd]"
+            >
               View All
-            </button>
+            </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -1102,11 +682,19 @@ export default function Dashboard() {
       <div className="px-8 mb-6">
         <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] shadow-sm">
           <div className="px-6 py-4 border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] flex items-center justify-between">
-            <h2 className="font-sans font-semibold text-[16px] text-[#111827] dark:text-[#e8eef5]">
-              Enforcement Vehicles
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="font-sans font-semibold text-[16px] text-[#111827] dark:text-[#e8eef5]">
+                Enforcement Vehicles
+              </h2>
+              <div className="group relative">
+                <Info className="size-4 text-[#6b7280] dark:text-[#94a3b8] cursor-help" />
+                <div className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 top-6 w-64 bg-[#111827] dark:bg-[#1a2d47] text-white dark:text-[#e8eef5] text-xs rounded-lg px-3 py-2 shadow-lg z-50 border border-transparent dark:border-[rgba(59,130,246,0.15)]">
+                  Active patrol vehicles equipped with LPR cameras. Shows current site assignment, zone, and camera health status for each unit.
+                </div>
+              </div>
+            </div>
             <Link
-              to="/operations/devices"
+              to="/operations/enforcement-vehicles"
               className="text-[13px] font-medium text-[#3b82f6] dark:text-[#60a5fa] hover:text-[#2563eb] dark:hover:text-[#93c5fd]"
             >
               View All
@@ -1264,12 +852,23 @@ export default function Dashboard() {
       <div className="px-8">
         <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-            <h2 className="font-sans font-semibold text-[16px] text-[#111827] dark:text-[#e8eef5]">
-              Recent Violations
-            </h2>
-            <button className="text-[13px] font-medium text-[#3b82f6] dark:text-[#60a5fa] hover:text-[#2563eb] dark:hover:text-[#93c5fd]">
+            <div className="flex items-center gap-2">
+              <h2 className="font-sans font-semibold text-[16px] text-[#111827] dark:text-[#e8eef5]">
+                Recent Violations
+              </h2>
+              <div className="group relative">
+                <Info className="size-4 text-[#6b7280] dark:text-[#94a3b8] cursor-help" />
+                <div className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 top-6 w-64 bg-[#111827] dark:bg-[#1a2d47] text-white dark:text-[#e8eef5] text-xs rounded-lg px-3 py-2 shadow-lg z-50 border border-transparent dark:border-[rgba(59,130,246,0.15)]">
+                  The most recent parking violations detected across all sites, including plate number, zone, violation type, fine amount, and current resolution status.
+                </div>
+              </div>
+            </div>
+            <Link
+              to="/operations/violations"
+              className="text-[13px] font-medium text-[#3b82f6] dark:text-[#60a5fa] hover:text-[#2563eb] dark:hover:text-[#93c5fd]"
+            >
               View All
-            </button>
+            </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
