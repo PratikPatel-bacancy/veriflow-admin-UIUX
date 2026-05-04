@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Plus, Search, Filter, Info } from "lucide-react";
+import { Plus, Search, Filter, Info, Eye } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/app/components/ui/tooltip";
 
 const mockZones = [
@@ -89,6 +89,12 @@ const mockZones = [
 export default function ZoneList() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [zoneStatuses, setZoneStatuses] = useState<Record<number, boolean>>(
+    Object.fromEntries(mockZones.map((z) => [z.id, z.status === "Active"]))
+  );
+
+  const toggleStatus = (id: number) =>
+    setZoneStatuses((prev) => ({ ...prev, [id]: !prev[id] }));
 
   // Filter zones based on search query
   const filteredZones = mockZones.filter(zone => {
@@ -105,7 +111,7 @@ export default function ZoneList() {
     <>
       <div className="flex-1 overflow-auto bg-[#eff6ff] dark:bg-[#0a1628] pb-6">
         {/* Page Header */}
-        <div className="px-8 pt-8 pb-6">
+        {/* <div className="px-8 pt-8 pb-6">
           <div className="flex items-center justify-end">
             <button
               onClick={() => navigate("/management/zones/add/1")}
@@ -115,11 +121,11 @@ export default function ZoneList() {
               Add Zone
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* KPI Cards */}
-        <div className="px-8 mb-6">
-          <div className="grid grid-cols-3 gap-5">
+        <div className="px-8 pt-8 mb-6">
+          <div className="grid grid-cols-2 gap-5">
             <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
               <div className="flex items-center gap-1.5 mb-1">
                 <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8]">
@@ -156,7 +162,7 @@ export default function ZoneList() {
                 {totalVehicleCapacity}
               </p>
             </div>
-            <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
+            {/* <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
               <div className="flex items-center gap-1.5 mb-1">
                 <p className="font-['Inter'] font-normal text-[13px] text-[#dc2626] dark:text-[#f87171]">
                   Active Violations
@@ -173,7 +179,7 @@ export default function ZoneList() {
               <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#dc2626] dark:text-[#f87171]">
                 {activeViolations}
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -220,12 +226,15 @@ export default function ZoneList() {
                   <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
                     Status
                   </th>
+                  <th className="text-left px-6 py-3 text-[12px] font-medium text-[#6b7280] dark:text-[#94a3b8]">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredZones.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-[#6b7280] dark:text-[#94a3b8]">
+                    <td colSpan={6} className="px-6 py-12 text-center text-[#6b7280] dark:text-[#94a3b8]">
                       No zones found matching your search
                     </td>
                   </tr>
@@ -233,12 +242,9 @@ export default function ZoneList() {
                   filteredZones.map((zone) => (
                     <tr key={zone.id} className="border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.5)]">
                       <td className="px-6 py-4">
-                        <Link
-                          to={`/management/zones/${zone.id}`}
-                          className="font-['Inter'] font-medium text-[14px] text-[#111827] dark:text-[#e8eef5] hover:text-[#3b82f6]"
-                        >
+                        <span className="font-['Inter'] font-medium text-[14px] text-[#111827] dark:text-[#e8eef5]">
                           {zone.name}
-                        </Link>
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-[14px] text-[#6b7280] dark:text-[#94a3b8]">
                         {zone.parkingLots}
@@ -250,9 +256,34 @@ export default function ZoneList() {
                         {zone.capacity}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium bg-[#d1fae5] dark:bg-[#065f46] text-[#065f46] dark:text-[#34d399]">
-                          {zone.status}
-                        </span>
+                        <button
+                          onClick={() => toggleStatus(zone.id)}
+                          className="inline-flex items-center gap-2 text-[13px] font-medium text-[#111827] dark:text-[#e8eef5]"
+                        >
+                          <span className="inline-block w-[52px]">
+                            {zoneStatuses[zone.id] ? "Active" : "Inactive"}
+                          </span>
+                          <span className={`relative inline-flex items-center w-9 h-5 rounded-full transition-colors duration-200 ${
+                            zoneStatuses[zone.id] ? "bg-[#16a34a]" : "bg-[#9ca3af] dark:bg-[#4b5563]"
+                          }`}>
+                            <span className={`absolute size-3.5 bg-white rounded-full shadow transition-all duration-200 ${
+                              zoneStatuses[zone.id] ? "left-[20px]" : "left-[2px]"
+                            }`} />
+                          </span>
+                        </button>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Link
+                              to={`/management/zones/${zone.id}`}
+                              className="p-1.5 rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] hover:bg-[#f3f4f6] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors inline-block"
+                            >
+                              <Eye className="size-4 text-[#6b7280] dark:text-[#94a3b8]" />
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">View Detail</TooltipContent>
+                        </Tooltip>
                       </td>
                     </tr>
                   ))

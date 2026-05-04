@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Plus, Eye, Trash2, Info, Search, Filter } from "lucide-react";
+import { Plus, Eye, Trash2, Info, Search, Filter, LayoutGrid } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/app/components/ui/tooltip";
 
 const mockSites = [
@@ -61,16 +61,25 @@ export default function SitesList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [siteStatuses, setSiteStatuses] = useState<Record<number, boolean>>(
+    Object.fromEntries(mockSites.map((s) => [s.id, s.status === "Active"]))
+  );
+
+  const toggleStatus = (id: number) =>
+    setSiteStatuses((prev) => ({ ...prev, [id]: !prev[id] }));
 
   // Filter sites based on search and filters
   const filteredSites = mockSites.filter(site => {
     const matchesSearch = site.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = selectedStatus === "All" || site.status === selectedStatus;
+    const isActive = siteStatuses[site.id];
+    const statusLabel = isActive ? "Active" : "Inactive";
+    const matchesStatus = selectedStatus === "All" || statusLabel === selectedStatus;
     return matchesSearch && matchesStatus;
   });
 
   const totalZones = mockSites.reduce((sum, site) => sum + site.zones, 0);
-  const inactiveSites = mockSites.filter(s => s.status === "Suspended" || s.status === "Inactive").length;
+  const activeSites = Object.values(siteStatuses).filter(Boolean).length;
+  const inactiveSites = mockSites.length - activeSites;
 
   return (
     <>
@@ -90,7 +99,7 @@ export default function SitesList() {
 
         {/* KPI Cards */}
         <div className="px-8 mb-6">
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-4 gap-5">
             <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
               <div className="flex items-center gap-1.5 mb-1">
                 <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8]">
@@ -130,6 +139,24 @@ export default function SitesList() {
             <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
               <div className="flex items-center gap-1.5 mb-1">
                 <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8]">
+                  Total Active Sites
+                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="size-3.5 text-[#9ca3af] dark:text-[#6b7280] cursor-pointer hover:text-[#3b82f6] dark:hover:text-[#60a5fa] transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[220px] text-center">
+                    Sites currently enabled and actively monitoring parking activity.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <p className="font-['Inter'] font-semibold text-[28px] leading-[32px] text-[#111827] dark:text-[#e8eef5]">
+                {activeSites}
+              </p>
+            </div>
+            <div className="bg-white dark:bg-[#0f1f35] rounded-xl border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5 shadow-sm">
+              <div className="flex items-center gap-1.5 mb-1">
+                <p className="font-['Inter'] font-normal text-[13px] text-[#6b7280] dark:text-[#94a3b8]">
                   Total Inactive Sites
                 </p>
                 <Tooltip>
@@ -137,7 +164,7 @@ export default function SitesList() {
                     <Info className="size-3.5 text-[#9ca3af] dark:text-[#6b7280] cursor-pointer hover:text-[#3b82f6] dark:hover:text-[#60a5fa] transition-colors" />
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-[220px] text-center">
-                    Sites that are currently suspended or inactive and not accepting vehicles.
+                    Sites that are currently disabled and not accepting or monitoring vehicles.
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -235,31 +262,54 @@ export default function SitesList() {
                       <td className="px-6 py-4 text-[14px] text-[#6b7280] dark:text-[#94a3b8]">{site.facilities}</td>
                       <td className="px-6 py-4 text-[14px] text-[#6b7280] dark:text-[#94a3b8]">{site.created}</td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium ${
-                          site.status === "Active"
-                            ? "bg-[#d1fae5] dark:bg-[#065f46] text-[#065f46] dark:text-[#34d399]"
-                            : site.status === "Trial"
-                            ? "bg-[#fef3c7] dark:bg-[#78350f] text-[#92400e] dark:text-[#fbbf24]"
-                            : "bg-[#fee2e2] dark:bg-[#7f1d1d] text-[#991b1b] dark:text-[#f87171]"
-                        }`}>
-                          {site.status}
-                        </span>
+                        <button
+                          onClick={() => toggleStatus(site.id)}
+                          className="inline-flex items-center gap-2 text-[13px] font-medium text-[#111827] dark:text-[#e8eef5]"
+                        >
+                          <span className="inline-block w-[52px]">
+                            {siteStatuses[site.id] ? "Active" : "Inactive"}
+                          </span>
+                          <span className={`relative inline-flex items-center w-9 h-5 rounded-full transition-colors duration-200 ${
+                            siteStatuses[site.id] ? "bg-[#16a34a]" : "bg-[#9ca3af] dark:bg-[#4b5563]"
+                          }`}>
+                            <span className={`absolute size-3.5 bg-white rounded-full shadow transition-all duration-200 ${
+                              siteStatuses[site.id] ? "left-[20px]" : "left-[2px]"
+                            }`} />
+                          </span>
+                        </button>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            to={`/management/sites/${site.id}`}
-                            className="p-1.5 rounded hover:bg-[#e5e7eb] dark:hover:bg-[#4b5563] transition-colors"
-                            title="View"
-                          >
-                            <Eye className="size-4 text-[#6b7280] dark:text-[#94a3b8]" />
-                          </Link>
-                          <button
-                            className="p-1.5 rounded hover:bg-[#fee2e2] dark:hover:bg-[#7f1d1d] transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="size-4 text-[#ef4444] dark:text-[#f87171]" />
-                          </button>
+                        <div className="flex items-center gap-3">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Link
+                                to={`/management/sites/${site.id}`}
+                                className="p-1.5 rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] hover:bg-[#f3f4f6] dark:hover:bg-[rgba(30,58,95,0.5)] transition-colors block"
+                              >
+                                <Eye className="size-4 text-[#6b7280] dark:text-[#94a3b8]" />
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">View Detail</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Link
+                                to={`/management/zones/add/${site.id}`}
+                                className="p-1.5 rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] hover:bg-[#eff6ff] dark:hover:bg-[rgba(59,130,246,0.1)] transition-colors block"
+                              >
+                                <LayoutGrid className="size-4 text-[#3b82f6] dark:text-[#60a5fa]" />
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Add Zone</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button className="p-1.5 rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] hover:bg-[#fee2e2] dark:hover:bg-[rgba(127,29,29,0.3)] transition-colors">
+                                <Trash2 className="size-4 text-[#ef4444] dark:text-[#f87171]" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Delete</TooltipContent>
+                          </Tooltip>
                         </div>
                       </td>
                     </tr>

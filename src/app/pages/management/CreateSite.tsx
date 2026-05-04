@@ -2,8 +2,7 @@ import "leaflet/dist/leaflet.css";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Plus, Edit, Info, Check, ChevronRight, ChevronLeft, Loader2, Trash2 } from "lucide-react";
-import L from "leaflet";
-import { MapContainer, TileLayer, Polygon, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Polygon, CircleMarker, useMapEvents } from "react-leaflet";
 
 // ── Constants ─────────────────────────────────────────────────────────────
 
@@ -22,13 +21,6 @@ const inputCls =
 
 const labelCls = "block text-sm font-medium text-[#111827] dark:text-[#e8eef5] mb-2";
 
-// Vertex icon for draggable map points
-const vertexIcon = L.divIcon({
-  className: "",
-  html: `<div style="width:14px;height:14px;border-radius:50%;background:#3b82f6;border:2.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.35);cursor:grab"></div>`,
-  iconSize: [14, 14],
-  iconAnchor: [7, 7],
-});
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -47,8 +39,7 @@ interface ZoneFormData {
   capacity: string;
   parkingLots: ParkingLotEntry[];
   parkingLotDraft: { name: string; lat: string; lng: string };
-  geometryMethod: "draw" | "import";
-  status: string;
+  mapPoints: [number, number][];
   isCollapsed: boolean;
 }
 
@@ -56,19 +47,94 @@ type Step = 1 | 2 | 3;
 
 // ── Map sub-components ────────────────────────────────────────────────────
 
-function MapClickHandler({
-  onAdd,
-  disabled,
-}: {
-  onAdd: (pt: [number, number]) => void;
-  disabled: boolean;
-}) {
-  useMapEvents({
-    click: (e) => {
-      if (!disabled) onAdd([e.latlng.lat, e.latlng.lng]);
-    },
-  });
+function MapClickHandler({ onAdd }: { onAdd: (pt: [number, number]) => void }) {
+  useMapEvents({ click: (e) => onAdd([e.latlng.lat, e.latlng.lng]) });
   return null;
+}
+
+function ZoneMap({
+  points,
+  setPoints,
+}: {
+  points: [number, number][];
+  setPoints: (pts: [number, number][]) => void;
+}) {
+  return (
+    <div style={{ position: "relative", height: 280, borderRadius: 8, overflow: "hidden" }}>
+      <MapContainer
+        center={[42.3314, -83.0458]}
+        zoom={13}
+        style={{ width: "100%", height: "100%" }}
+        scrollWheelZoom={false}
+        attributionControl={false}
+        className="z-0"
+      >
+        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+        <MapClickHandler onAdd={(pt) => setPoints([...points, pt])} />
+        {points.length >= 3 && (
+          <Polygon
+            positions={points}
+            pathOptions={{ color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.15, weight: 2 }}
+          />
+        )}
+        {points.map((pt, i) => (
+          <CircleMarker
+            key={i}
+            center={pt}
+            radius={i === 0 ? 9 : 6}
+            pathOptions={{
+              fillColor: i === 0 ? "#7C3AED" : "#3b82f6",
+              fillOpacity: 0.9,
+              color: "#ffffff",
+              weight: 2,
+            }}
+          />
+        ))}
+      </MapContainer>
+
+      {points.length === 0 && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 1000, pointerEvents: "none",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <span style={{
+            background: "rgba(255,255,255,0.85)", backdropFilter: "blur(4px)",
+            padding: "8px 16px", borderRadius: 8,
+            fontSize: 13, color: "#6B7280", fontWeight: 500,
+          }}>
+            Click inside the site area to draw the zone boundary. Min 3 points.
+          </span>
+        </div>
+      )}
+
+      {points.length > 0 && (
+        <div style={{
+          position: "absolute", bottom: 12, right: 12, zIndex: 1000,
+          display: "flex", alignItems: "center", gap: 6,
+        }}>
+          <span style={{
+            background: "rgba(255,255,255,0.92)", backdropFilter: "blur(4px)",
+            padding: "4px 10px", borderRadius: 6,
+            fontSize: 11, fontWeight: 600, color: "#374151",
+          }}>
+            {points.length} point{points.length !== 1 ? "s" : ""}
+            {points.length >= 3 ? " · polygon ready" : ` · ${3 - points.length} more needed`}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPoints([])}
+            style={{
+              background: "#FEE2E2", border: "none", borderRadius: 6,
+              padding: "4px 10px", cursor: "pointer",
+              fontSize: 11, fontWeight: 600, color: "#DC2626",
+            }}
+          >
+            Reset
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function TriangleMap({
@@ -78,64 +144,84 @@ function TriangleMap({
   points: [number, number][];
   setPoints: (pts: [number, number][]) => void;
 }) {
-  const isComplete = points.length === 3;
-
   return (
-    <div>
-      <div className="relative rounded-lg overflow-hidden border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-        <MapContainer
-          center={[40.7128, -74.006]}
-          zoom={11}
-          style={{ height: "280px" }}
-          className="w-full z-0"
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="© OpenStreetMap contributors"
-          />
-          <MapClickHandler onAdd={(pt) => setPoints([...points, pt])} disabled={isComplete} />
-          {isComplete && (
-            <Polygon
-              positions={points}
-              pathOptions={{ color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.2, weight: 2 }}
-            />
-          )}
-          {points.map((pt, i) => (
-            <Marker
-              key={i}
-              position={pt}
-              draggable={true}
-              icon={vertexIcon}
-              eventHandlers={{
-                dragend: (e) => {
-                  const { lat, lng } = (e.target as L.Marker).getLatLng();
-                  const updated = [...points] as [number, number][];
-                  updated[i] = [lat, lng];
-                  setPoints(updated);
-                },
-              }}
-            />
-          ))}
-        </MapContainer>
+    <div style={{ position: "relative", height: 300, borderRadius: 8, overflow: "hidden" }}>
+      <MapContainer
+        center={[42.3314, -83.0458]}
+        zoom={13}
+        style={{ width: "100%", height: "100%" }}
+        scrollWheelZoom={false}
+        attributionControl={false}
+        className="z-0"
+      >
+        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+        <MapClickHandler onAdd={(pt) => setPoints([...points, pt])} />
 
-        {/* Reset button overlaid at bottom-right */}
-        {points.length > 0 && (
+        {points.length >= 3 && (
+          <Polygon
+            positions={points}
+            pathOptions={{ color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.15, weight: 2 }}
+          />
+        )}
+
+        {points.map((pt, i) => (
+          <CircleMarker
+            key={i}
+            center={pt}
+            radius={i === 0 ? 9 : 6}
+            pathOptions={{
+              fillColor: i === 0 ? "#7C3AED" : "#3b82f6",
+              fillOpacity: 0.9,
+              color: "#ffffff",
+              weight: 2,
+            }}
+          />
+        ))}
+      </MapContainer>
+
+      {/* Placeholder when no points */}
+      {points.length === 0 && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 1000, pointerEvents: "none",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <span style={{
+            background: "rgba(255,255,255,0.85)", backdropFilter: "blur(4px)",
+            padding: "8px 16px", borderRadius: 8,
+            fontSize: 13, color: "#6B7280", fontWeight: 500,
+          }}>
+            Click to place points. Min 3 points. Close polygon to finish.
+          </span>
+        </div>
+      )}
+
+      {/* Controls overlay */}
+      {points.length > 0 && (
+        <div style={{
+          position: "absolute", bottom: 12, right: 12, zIndex: 1000,
+          display: "flex", alignItems: "center", gap: 6,
+        }}>
+          <span style={{
+            background: "rgba(255,255,255,0.92)", backdropFilter: "blur(4px)",
+            padding: "4px 10px", borderRadius: 6,
+            fontSize: 11, fontWeight: 600, color: "#374151",
+          }}>
+            {points.length} point{points.length !== 1 ? "s" : ""}
+            {points.length >= 3 ? " · polygon ready" : ` · ${3 - points.length} more needed`}
+          </span>
           <button
             type="button"
             onClick={() => setPoints([])}
-            className="absolute bottom-3 right-3 z-[1000] px-2.5 py-1.5 text-xs font-semibold bg-[#ef4444] text-white rounded-lg hover:bg-[#dc2626] shadow-md transition-colors"
+            style={{
+              background: "#FEE2E2", border: "none", borderRadius: 6,
+              padding: "4px 10px", cursor: "pointer",
+              fontSize: 11, fontWeight: 600, color: "#DC2626",
+            }}
           >
             Reset
           </button>
-        )}
-      </div>
-
-      {/* Status text below map */}
-      <p className={`mt-2 text-xs ${isComplete ? "text-[#16a34a] dark:text-[#34d399] font-medium" : "text-[#6b7280] dark:text-[#94a3b8]"}`}>
-        {isComplete
-          ? "3 points · polygon ready"
-          : `${points.length} / 3 points placed — click on map to add`}
-      </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -162,6 +248,7 @@ export default function CreateSite() {
 
   const [mapPoints, setMapPoints] = useState<[number, number][]>([]);
   const [zones, setZones] = useState<ZoneFormData[]>([]);
+  const [lotFormOpen, setLotFormOpen] = useState<Record<string, boolean>>({});
 
   const handleSiteDataChange = (field: string, value: string) => {
     setSiteData({ ...siteData, [field]: value });
@@ -179,8 +266,7 @@ export default function CreateSite() {
         capacity: "",
         parkingLots: [],
         parkingLotDraft: { name: "", lat: "", lng: "" },
-        geometryMethod: "draw",
-        status: "Active",
+        mapPoints: [],
         isCollapsed: false,
       },
     ]);
@@ -191,12 +277,17 @@ export default function CreateSite() {
   const updateZone = (id: string, field: keyof ZoneFormData, value: any) =>
     setZones(zones.map((z) => (z.id === id ? { ...z, [field]: value } : z)));
 
-  const addParkingLotToZone = (zoneId: string, draft: { name: string; lat: string; lng: string }) =>
+  const setZoneMapPoints = (id: string, pts: [number, number][]) =>
+    setZones(zones.map((z) => (z.id === id ? { ...z, mapPoints: pts } : z)));
+
+  const addParkingLotToZone = (zoneId: string, draft: { name: string; lat: string; lng: string }) => {
     setZones(zones.map((z) =>
       z.id === zoneId
         ? { ...z, parkingLots: [...z.parkingLots, { id: `pl-${Date.now()}`, ...draft }], parkingLotDraft: { name: "", lat: "", lng: "" } }
         : z
     ));
+    setLotFormOpen((prev) => ({ ...prev, [zoneId]: false }));
+  };
 
   const toggleZoneCollapse = (id: string) =>
     setZones(zones.map((z) => (z.id === id ? { ...z, isCollapsed: !z.isCollapsed } : z)));
@@ -223,11 +314,6 @@ export default function CreateSite() {
     if (completedSteps.includes(step) || step < currentStep) setCurrentStep(step);
   };
 
-  const handleSkipZones = () => {
-    setCompletedSteps([...completedSteps, 2]);
-    setCurrentStep(3);
-  };
-
   const handleCreateSite = async () => {
     setIsCreating(true);
     setTimeout(() => navigate("/management/sites/1"), 1000);
@@ -244,8 +330,8 @@ export default function CreateSite() {
   const completionPercentage = Math.round((filledCount / 8) * 100);
 
   return (
-    <>
-      <div className="flex-1 overflow-auto bg-[#eff6ff] dark:bg-[#0a1628] pb-24">
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-auto bg-[#eff6ff] dark:bg-[#0a1628] pb-6">
         {/* Breadcrumb */}
         <div className="px-8 pt-6">
           <div className="flex items-center gap-2 text-[14px] text-[#6b7280] dark:text-[#94a3b8]">
@@ -396,10 +482,10 @@ export default function CreateSite() {
 
                     {/* Draw on Map */}
                     <div>
-                      <label className={labelCls}>Draw Boundary on Map</label>
-                      <p className="text-xs text-[#6b7280] dark:text-[#94a3b8] mb-3">
+                      <label className={labelCls}>Geometry</label>
+                      {/* <p className="text-xs text-[#6b7280] dark:text-[#94a3b8] mb-3">
                         Click exactly 3 points on the map to define the site boundary triangle.
-                      </p>
+                      </p> */}
                       <TriangleMap points={mapPoints} setPoints={setMapPoints} />
                     </div>
 
@@ -418,15 +504,22 @@ export default function CreateSite() {
                     {/* Status */}
                     <div>
                       <label className={labelCls}>Status</label>
-                      <select
-                        value={siteData.status}
-                        onChange={(e) => handleSiteDataChange("status", e.target.value)}
-                        className={inputCls}
+                      <button
+                        type="button"
+                        onClick={() => handleSiteDataChange("status", siteData.status === "Active" ? "Inactive" : "Active")}
+                        className="inline-flex items-center gap-2 text-[13px] font-medium text-[#111827] dark:text-[#e8eef5]"
                       >
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                        <option value="Draft">Draft</option>
-                      </select>
+                        <span className="inline-block w-[52px]">
+                          {siteData.status === "Active" ? "Active" : "Inactive"}
+                        </span>
+                        <span className={`relative inline-flex items-center w-9 h-5 rounded-full transition-colors duration-200 ${
+                          siteData.status === "Active" ? "bg-[#16a34a]" : "bg-[#9ca3af] dark:bg-[#4b5563]"
+                        }`}>
+                          <span className={`absolute size-3.5 bg-white rounded-full shadow transition-all duration-200 ${
+                            siteData.status === "Active" ? "left-[20px]" : "left-[2px]"
+                          }`} />
+                        </span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -435,193 +528,218 @@ export default function CreateSite() {
               {/* Step 2: Add Zones */}
               {currentStep === 2 && (
                 <>
-                  <div className="text-sm text-[#6b7280] dark:text-[#94a3b8] mb-4">
+                  <div className="text-sm text-[#6b7280] dark:text-[#94a3b8] mb-2">
                     Adding zones to: <span className="font-medium text-[#111827] dark:text-[#e8eef5]">{siteData.siteName}</span>
                   </div>
 
                   {zones.map((zone, index) => (
-                    <div key={zone.id} className="bg-white dark:bg-[#0f1f35] rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-sm font-medium text-[#6b7280] dark:text-[#94a3b8]">Zone {index + 1}</span>
-                        {zones.length > 1 && (
-                          <button onClick={() => removeZone(zone.id)} className="text-sm text-[#ef4444] hover:text-[#dc2626] transition-colors flex items-center gap-1">
-                            <Trash2 className="size-3.5" /> Remove
-                          </button>
-                        )}
-                      </div>
+                    <div key={zone.id} className="space-y-4">
 
-                      {zone.isCollapsed && zoneIsComplete(zone) ? (
-                        <div className="flex items-center justify-between py-2">
-                          <div className="flex items-center gap-3">
-                            <span className="font-medium text-[#111827] dark:text-[#e8eef5]">{zone.zoneName}</span>
-                            <span className="text-sm text-[#6b7280] dark:text-[#94a3b8]">• {zone.zoneType}</span>
-                            {zone.capacity && <span className="text-sm text-[#6b7280] dark:text-[#94a3b8]">• {zone.capacity} capacity</span>}
-                            {zone.parkingLots.length > 0 && <span className="text-sm text-[#6b7280] dark:text-[#94a3b8]">• {zone.parkingLots.length} lot{zone.parkingLots.length > 1 ? "s" : ""}</span>}
-                          </div>
-                          <button onClick={() => toggleZoneCollapse(zone.id)} className="p-1.5 hover:bg-[#eff6ff] dark:hover:bg-[rgba(30,58,95,0.3)] rounded transition-colors">
-                            <Edit className="size-4 text-[#6b7280] dark:text-[#94a3b8]" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="space-y-5">
-                          <div>
-                            <label className={labelCls}>Zone Name <span className="text-[#ef4444]">*</span></label>
-                            <input type="text" value={zone.zoneName} onChange={(e) => updateZone(zone.id, "zoneName", e.target.value)} placeholder="e.g. Lot 2 — Permit A (North)" className={inputCls} />
-                          </div>
-                          <div>
-                            <label className={labelCls}>Zone Type <span className="text-[#ef4444]">*</span></label>
-                            <select value={zone.zoneType} onChange={(e) => updateZone(zone.id, "zoneType", e.target.value)} className={inputCls}>
-                              <option value="">Select type</option>
-                              <option value="Curb Segment">Curb Segment</option>
-                              <option value="Surface Lot Zone">Surface Lot Zone</option>
-                              <option value="Structure Level & Aisle">Structure Level & Aisle</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className={labelCls}>Policy Template</label>
-                            <select value={zone.policyTemplate} onChange={(e) => updateZone(zone.id, "policyTemplate", e.target.value)} className={inputCls}>
-                              <option value="">None</option>
-                              <option value="30-min Parking">30-min Parking</option>
-                              <option value="1-Hour Parking">1-Hour Parking</option>
-                              <option value="2-Hour Parking">2-Hour Parking</option>
-                              <option value="Permit Only">Permit Only</option>
-                              <option value="Loading Zone">Loading Zone</option>
-                              <option value="Pay-to-Park">Pay-to-Park</option>
-                              <option value="Handicap Stall">Handicap Stall</option>
-                              <option value="No Stopping">No Stopping</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className={labelCls}>Capacity</label>
-                            <input type="number" value={zone.capacity} onChange={(e) => updateZone(zone.id, "capacity", e.target.value)} placeholder="0" className={inputCls} />
-                          </div>
-                          <div>
-                            <label className={labelCls}>Parking Lots</label>
-                            <div className="space-y-3">
-                              <div className="border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg p-4 space-y-3 bg-[#f9fafb] dark:bg-[#0a1628]">
-                                <div>
-                                  <label className="block text-xs font-medium text-[#6b7280] dark:text-[#94a3b8] mb-1.5">Parking Lot Name</label>
-                                  <input
-                                    type="text"
-                                    value={zone.parkingLotDraft.name}
-                                    onChange={(e) => updateZone(zone.id, "parkingLotDraft", { ...zone.parkingLotDraft, name: e.target.value })}
-                                    placeholder="e.g. Level 1 — North Wing"
-                                    className={inputCls}
-                                  />
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div>
-                                    <label className="block text-xs font-medium text-[#6b7280] dark:text-[#94a3b8] mb-1.5">Latitude</label>
-                                    <input
-                                      type="text"
-                                      value={zone.parkingLotDraft.lat}
-                                      onChange={(e) => updateZone(zone.id, "parkingLotDraft", { ...zone.parkingLotDraft, lat: e.target.value })}
-                                      placeholder="e.g. 42.3314"
-                                      className={inputCls}
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-[#6b7280] dark:text-[#94a3b8] mb-1.5">Longitude</label>
-                                    <input
-                                      type="text"
-                                      value={zone.parkingLotDraft.lng}
-                                      onChange={(e) => updateZone(zone.id, "parkingLotDraft", { ...zone.parkingLotDraft, lng: e.target.value })}
-                                      placeholder="e.g. -83.0458"
-                                      className={inputCls}
-                                    />
-                                  </div>
-                                </div>
-                                <button
-                                  type="button"
-                                  disabled={!zone.parkingLotDraft.name.trim()}
-                                  onClick={() => addParkingLotToZone(zone.id, zone.parkingLotDraft)}
-                                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#3b82f6] text-white text-sm font-medium rounded-lg hover:bg-[#2563eb] disabled:bg-[#e5e7eb] disabled:text-[#9ca3af] disabled:cursor-not-allowed transition-colors"
-                                >
-                                  <Plus className="size-4" /> Add Parking Lot
-                                </button>
-                              </div>
-
-                              {zone.parkingLots.length > 0 && (
-                                <div className="border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg overflow-hidden">
-                                  <div className="flex items-center justify-between px-4 py-2.5 bg-[#eff6ff] dark:bg-[#1e3a5f] border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-                                    <span className="text-xs font-semibold text-[#2563eb] dark:text-[#60a5fa] uppercase tracking-wide">
-                                      Added Parking Lots
-                                    </span>
-                                    <span className="text-xs font-medium text-[#2563eb] dark:text-[#60a5fa] bg-white dark:bg-[#0f1f35] px-2 py-0.5 rounded-full border border-[#bfdbfe] dark:border-[rgba(59,130,246,0.3)]">
-                                      {zone.parkingLots.length} {zone.parkingLots.length === 1 ? "lot" : "lots"}
-                                    </span>
-                                  </div>
-                                  <div className="divide-y divide-[#e5e7eb] dark:divide-[rgba(59,130,246,0.1)]">
-                                    {zone.parkingLots.map((pl, idx) => (
-                                      <div key={pl.id} className="flex items-center justify-between px-4 py-3 bg-white dark:bg-[#0f1f35] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.4)] transition-colors">
-                                        <div className="flex items-center gap-3">
-                                          <span className="flex-shrink-0 size-6 rounded-full bg-[#dbeafe] dark:bg-[#1e3a8a] text-[#2563eb] dark:text-[#60a5fa] text-xs font-semibold flex items-center justify-center">
-                                            {idx + 1}
-                                          </span>
-                                          <div>
-                                            <p className="text-sm font-medium text-[#111827] dark:text-[#e8eef5]">{pl.name}</p>
-                                            {(pl.lat || pl.lng) ? (
-                                              <p className="text-xs text-[#6b7280] dark:text-[#94a3b8] mt-0.5">
-                                                {pl.lat && `Lat: ${pl.lat}`}{pl.lat && pl.lng && "  ·  "}{pl.lng && `Lng: ${pl.lng}`}
-                                              </p>
-                                            ) : (
-                                              <p className="text-xs text-[#9ca3af] dark:text-[#64748b] mt-0.5">No coordinates</p>
-                                            )}
-                                          </div>
-                                        </div>
-                                        <button
-                                          type="button"
-                                          onClick={() => updateZone(zone.id, "parkingLots", zone.parkingLots.filter((p) => p.id !== pl.id))}
-                                          className="p-1.5 rounded-lg hover:bg-[#fee2e2] dark:hover:bg-[#7f1d1d] transition-colors ml-2 flex-shrink-0"
-                                        >
-                                          <Trash2 className="size-3.5 text-[#dc2626] dark:text-[#f87171]" />
-                                        </button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <div>
-                            <label className={labelCls}>Geometry</label>
-                            <div className="border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg overflow-hidden">
-                              <div className="flex border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
-                                {(["draw", "import"] as const).map((m) => (
-                                  <button key={m} type="button" onClick={() => updateZone(zone.id, "geometryMethod", m)}
-                                    className={`flex-1 px-4 py-2 text-sm transition-colors ${zone.geometryMethod === m ? "bg-white dark:bg-[#0f1f35] text-[#3b82f6] border-b-2 border-[#3b82f6]" : "bg-[#eff6ff] dark:bg-[#1a2d47] text-[#6b7280] dark:text-[#94a3b8]"}`}>
-                                    {m === "draw" ? "Draw on Map" : "Import File"}
-                                  </button>
-                                ))}
-                              </div>
-                              <div className="p-4 bg-white dark:bg-[#0f1f35]">
-                                {zone.geometryMethod === "draw" ? (
-                                  <div className="bg-[#f5f5f5] dark:bg-[#1a2d47] border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded h-32 flex items-center justify-center">
-                                    <p className="text-sm text-[#6b7280] dark:text-[#94a3b8] text-center px-4">Click to place points. Min 3 points. Close polygon to finish.</p>
-                                  </div>
-                                ) : (
-                                  <div className="border-2 border-dashed border-[#e5e7eb] rounded h-32 flex flex-col items-center justify-center gap-2">
-                                    <p className="text-sm text-[#6b7280] dark:text-[#94a3b8]">Drop files here or click to upload</p>
-                                    <p className="text-xs text-[#9ca3af]">Accepts GeoJSON, CSV, or Shapefile</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div>
-                            <label className={labelCls}>Status</label>
-                            <select value={zone.status} onChange={(e) => updateZone(zone.id, "status", e.target.value)} className={inputCls}>
-                              <option value="Active">Active</option>
-                              <option value="Inactive">Inactive</option>
-                            </select>
-                          </div>
-                          {zoneIsComplete(zone) && (
-                            <button onClick={() => toggleZoneCollapse(zone.id)} className="text-sm text-[#3b82f6] hover:text-[#2563eb] transition-colors">
-                              Collapse
+                      {/* Zone Details Card */}
+                      <div className="bg-white dark:bg-[#0f1f35] rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-sm font-semibold text-[#111827] dark:text-[#e8eef5]">Zone {index + 1}</span>
+                          {zones.length > 1 && (
+                            <button onClick={() => removeZone(zone.id)} className="text-sm text-[#ef4444] hover:text-[#dc2626] transition-colors flex items-center gap-1">
+                              <Trash2 className="size-3.5" /> Remove
                             </button>
                           )}
                         </div>
-                      )}
+
+                        {zone.isCollapsed && zoneIsComplete(zone) ? (
+                          <div className="flex items-center justify-between py-2">
+                            <div className="flex items-center gap-3">
+                              <span className="font-medium text-[#111827] dark:text-[#e8eef5]">{zone.zoneName}</span>
+                              <span className="text-sm text-[#6b7280] dark:text-[#94a3b8]">• {zone.zoneType}</span>
+                              {zone.capacity && <span className="text-sm text-[#6b7280] dark:text-[#94a3b8]">• {zone.capacity} capacity</span>}
+                              {zone.parkingLots.length > 0 && <span className="text-sm text-[#6b7280] dark:text-[#94a3b8]">• {zone.parkingLots.length} lot{zone.parkingLots.length > 1 ? "s" : ""}</span>}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => toggleZoneCollapse(zone.id)} className="p-1.5 hover:bg-[#eff6ff] dark:hover:bg-[rgba(30,58,95,0.3)] rounded transition-colors">
+                                <Edit className="size-4 text-[#6b7280] dark:text-[#94a3b8]" />
+                              </button>
+                              <button onClick={() => removeZone(zone.id)} className="p-1.5 hover:bg-[#fee2e2] rounded transition-colors">
+                                <Trash2 className="size-4 text-[#ef4444]" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-5">
+                            <div>
+                              <label className={labelCls}>Zone Name <span className="text-[#ef4444]">*</span></label>
+                              <input type="text" value={zone.zoneName} onChange={(e) => updateZone(zone.id, "zoneName", e.target.value)} placeholder="e.g. Lot 2 — Permit A (North)" className={inputCls} />
+                            </div>
+                            <div>
+                              <label className={labelCls}>Zone Type <span className="text-[#ef4444]">*</span></label>
+                              <select value={zone.zoneType} onChange={(e) => updateZone(zone.id, "zoneType", e.target.value)} className={inputCls}>
+                                <option value="">Select type</option>
+                                <option value="Curb Segment">Curb Segment</option>
+                                <option value="Surface Lot Zone">Surface Lot Zone</option>
+                                <option value="Structure Level & Aisle">Structure Level & Aisle</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className={labelCls}>Policy Template</label>
+                              <select value={zone.policyTemplate} onChange={(e) => updateZone(zone.id, "policyTemplate", e.target.value)} className={inputCls}>
+                                <option value="">None</option>
+                                <option value="30-min Parking">30-min Parking</option>
+                                <option value="1-Hour Parking">1-Hour Parking</option>
+                                <option value="2-Hour Parking">2-Hour Parking</option>
+                                <option value="Permit Only">Permit Only</option>
+                                <option value="Loading Zone">Loading Zone</option>
+                                <option value="Pay-to-Park">Pay-to-Park</option>
+                                <option value="Handicap Stall">Handicap Stall</option>
+                                <option value="No Stopping">No Stopping</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className={labelCls}>Capacity</label>
+                              <input type="number" value={zone.capacity} onChange={(e) => updateZone(zone.id, "capacity", e.target.value)} placeholder="0" className={inputCls} />
+                            </div>
+                            {zoneIsComplete(zone) && (
+                              <button onClick={() => toggleZoneCollapse(zone.id)} className="text-sm text-[#3b82f6] hover:text-[#2563eb] transition-colors">
+                                Collapse
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Zone Boundary Card */}
+                      <div className="bg-white dark:bg-[#0f1f35] rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5">
+                       <div className="flex items-center mb-4">
+                          <p className="font-semibold text-[14px] text-[#111827] dark:text-[#e8eef5]">Zone Boundary</p>
+                          <span className="text-[11px] ms-2 font-medium px-2 py-0.5 rounded-full border border-[#bfdbfe] dark:border-[rgba(59,130,246,0.3)] text-[#3b82f6] bg-[#eff6ff] dark:bg-[rgba(59,130,246,0.08)]">
+                            Site boundary shown
+                          </span>
+                        </div>
+
+                        <ZoneMap
+                          points={zone.mapPoints}
+                          setPoints={(pts) => setZoneMapPoints(zone.id, pts)}
+                        />
+
+                        <div className="flex items-center gap-5 mt-3">
+                          <div className="flex items-center gap-1.5">
+                            <svg width="24" height="8" viewBox="0 0 24 8">
+                              <line x1="0" y1="4" x2="24" y2="4" stroke="#6b7280" strokeWidth="2" strokeDasharray="4 3" />
+                            </svg>
+                            <span className="text-[11px] text-[#6b7280] dark:text-[#94a3b8]">Site boundary</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-block w-3.5 h-3.5 rounded-sm bg-[#3b82f6] opacity-50 flex-shrink-0" />
+                            <span className="text-[11px] text-[#6b7280] dark:text-[#94a3b8]">Zone area</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Parking Lots Card */}
+                      <div className="bg-white dark:bg-[#0f1f35] rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-5">
+                        <div className="flex items-center justify-between">
+                          <p className="font-semibold text-[14px] text-[#111827] dark:text-[#e8eef5]">Parking Lots</p>
+                          <button
+                            type="button"
+                            onClick={() => setLotFormOpen((prev) => ({ ...prev, [zone.id]: !prev[zone.id] }))}
+                            className="flex items-center gap-1 text-[13px] font-medium text-[#3b82f6] hover:text-[#2563eb] transition-colors"
+                          >
+                            <Plus className="size-3.5" /> Add Parking Lot
+                          </button>
+                        </div>
+
+                        {lotFormOpen[zone.id] && (
+                          <div className="mt-4 border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg p-4 space-y-3 bg-[#f9fafb] dark:bg-[#0a1628]">
+                            <div>
+                              <label className="block text-xs font-medium text-[#6b7280] dark:text-[#94a3b8] mb-1.5">Parking Lot Name</label>
+                              <input
+                                type="text"
+                                value={zone.parkingLotDraft.name}
+                                onChange={(e) => updateZone(zone.id, "parkingLotDraft", { ...zone.parkingLotDraft, name: e.target.value })}
+                                placeholder="e.g. Level 1 — North Wing"
+                                className={inputCls}
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-[#6b7280] dark:text-[#94a3b8] mb-1.5">Latitude</label>
+                                <input
+                                  type="text"
+                                  value={zone.parkingLotDraft.lat}
+                                  onChange={(e) => updateZone(zone.id, "parkingLotDraft", { ...zone.parkingLotDraft, lat: e.target.value })}
+                                  placeholder="e.g. 42.3314"
+                                  className={inputCls}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-[#6b7280] dark:text-[#94a3b8] mb-1.5">Longitude</label>
+                                <input
+                                  type="text"
+                                  value={zone.parkingLotDraft.lng}
+                                  onChange={(e) => updateZone(zone.id, "parkingLotDraft", { ...zone.parkingLotDraft, lng: e.target.value })}
+                                  placeholder="e.g. -83.0458"
+                                  className={inputCls}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                disabled={!zone.parkingLotDraft.name.trim()}
+                                onClick={() => addParkingLotToZone(zone.id, zone.parkingLotDraft)}
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#3b82f6] text-white text-sm font-medium rounded-lg hover:bg-[#2563eb] disabled:bg-[#e5e7eb] disabled:text-[#9ca3af] disabled:cursor-not-allowed transition-colors"
+                              >
+                                <Plus className="size-4" /> Add
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setLotFormOpen((prev) => ({ ...prev, [zone.id]: false }))}
+                                className="px-4 py-2 border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] text-sm text-[#6b7280] rounded-lg hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.3)] transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {zone.parkingLots.length > 0 && (
+                          <div className="mt-4 border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-2.5 bg-[#eff6ff] dark:bg-[#1e3a5f] border-b border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)]">
+                              <span className="text-xs font-semibold text-[#2563eb] dark:text-[#60a5fa] uppercase tracking-wide">Added Lots</span>
+                              <span className="text-xs font-medium text-[#2563eb] dark:text-[#60a5fa] bg-white dark:bg-[#0f1f35] px-2 py-0.5 rounded-full border border-[#bfdbfe] dark:border-[rgba(59,130,246,0.3)]">
+                                {zone.parkingLots.length} {zone.parkingLots.length === 1 ? "lot" : "lots"}
+                              </span>
+                            </div>
+                            <div className="divide-y divide-[#e5e7eb] dark:divide-[rgba(59,130,246,0.1)]">
+                              {zone.parkingLots.map((pl, idx) => (
+                                <div key={pl.id} className="flex items-center justify-between px-4 py-3 bg-white dark:bg-[#0f1f35] hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.4)] transition-colors">
+                                  <div className="flex items-center gap-3">
+                                    <span className="flex-shrink-0 size-6 rounded-full bg-[#dbeafe] dark:bg-[#1e3a8a] text-[#2563eb] dark:text-[#60a5fa] text-xs font-semibold flex items-center justify-center">
+                                      {idx + 1}
+                                    </span>
+                                    <div>
+                                      <p className="text-sm font-medium text-[#111827] dark:text-[#e8eef5]">{pl.name}</p>
+                                      {(pl.lat || pl.lng) ? (
+                                        <p className="text-xs text-[#6b7280] dark:text-[#94a3b8] mt-0.5">
+                                          {pl.lat && `Lat: ${pl.lat}`}{pl.lat && pl.lng && "  ·  "}{pl.lng && `Lng: ${pl.lng}`}
+                                        </p>
+                                      ) : (
+                                        <p className="text-xs text-[#9ca3af] dark:text-[#64748b] mt-0.5">No coordinates</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateZone(zone.id, "parkingLots", zone.parkingLots.filter((p) => p.id !== pl.id))}
+                                    className="p-1.5 rounded-lg hover:bg-[#fee2e2] dark:hover:bg-[#7f1d1d] transition-colors ml-2 flex-shrink-0"
+                                  >
+                                    <Trash2 className="size-3.5 text-[#dc2626] dark:text-[#f87171]" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                     </div>
                   ))}
 
@@ -707,17 +825,10 @@ export default function CreateSite() {
                       <div className="space-y-3">
                         {zones.map((zone, index) => (
                           <div key={zone.id} className="border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] rounded-lg p-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="font-medium text-[#111827] dark:text-[#e8eef5] mb-1">Zone {index + 1} — {zone.zoneName || "Unnamed"}</p>
-                                <p className="text-sm text-[#6b7280] dark:text-[#94a3b8]">
-                                  {zone.zoneType}{zone.capacity && ` · ${zone.capacity} capacity`}{zone.policyTemplate && ` · ${zone.policyTemplate}`}{zone.parkingLots.length > 0 && ` · ${zone.parkingLots.length} parking lot${zone.parkingLots.length > 1 ? "s" : ""}`}
-                                </p>
-                              </div>
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${zone.status === "Active" ? "bg-[#d1fae5] text-[#065f46]" : "bg-[#e5e7eb] text-[#6b7280]"}`}>
-                                {zone.status}
-                              </span>
-                            </div>
+                            <p className="font-medium text-[#111827] dark:text-[#e8eef5] mb-1">Zone {index + 1} — {zone.zoneName || "Unnamed"}</p>
+                            <p className="text-sm text-[#6b7280] dark:text-[#94a3b8]">
+                              {zone.zoneType}{zone.capacity && ` · ${zone.capacity} capacity`}{zone.policyTemplate && ` · ${zone.policyTemplate}`}{zone.parkingLots.length > 0 && ` · ${zone.parkingLots.length} parking lot${zone.parkingLots.length > 1 ? "s" : ""}`}{zone.mapPoints.length >= 3 && ` · boundary drawn`}
+                            </p>
                           </div>
                         ))}
                       </div>
@@ -862,20 +973,24 @@ export default function CreateSite() {
         </div>
       </div>
 
-      {/* Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0f1f35] border-t border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] px-8 py-4 z-10">
+      {/* Footer */}
+      <div className="bg-white dark:bg-[#0f1f35] border-t border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] px-8 py-4">
         <div className="flex items-center justify-between">
           <button
-            onClick={currentStep === 1 ? handleCancel : handleBackStep}
+            onClick={currentStep === 1 ? () => navigate("/management/sites") : handleBackStep}
             className="border border-[#e5e7eb] text-[#111827] dark:text-[#e8eef5] font-medium rounded-lg px-6 py-2 hover:bg-[#eff6ff] dark:hover:bg-[rgba(30,58,95,0.3)] transition-colors flex items-center gap-2"
           >
-            {currentStep === 1 ? "Cancel" : <><ChevronLeft className="size-4" /> Back</>}
+            <ChevronLeft className="size-4" /> Back
           </button>
 
           <div className="flex items-center gap-3">
-            {currentStep === 2 && (
-              <button onClick={handleSkipZones} className="text-[#6b7280] dark:text-[#94a3b8] hover:text-[#111827] text-sm font-medium transition-colors">
-                Skip for now
+            {currentStep === 1 && (
+              <button
+                onClick={() => navigate("/management/sites")}
+                disabled={!requiredFieldsFilled}
+                className="border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] text-[#111827] dark:text-[#e8eef5] font-medium rounded-lg px-6 py-2 hover:bg-[#f9fafb] dark:hover:bg-[rgba(30,58,95,0.3)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Save
               </button>
             )}
             {currentStep < 3 ? (
@@ -914,6 +1029,6 @@ export default function CreateSite() {
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }

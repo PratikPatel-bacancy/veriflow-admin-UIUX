@@ -11,7 +11,7 @@ export default function UsageStatistics() {
             <Activity className="size-5 text-[#3b82f6]" />
           </div>
           <p className="text-3xl font-semibold text-[#111827] dark:text-[#e8eef5]">1,542</p>
-          <p className="text-xs text-[#10b981] mt-2">+12.5% from last week</p>
+          {/* <p className="text-xs text-[#10b981] mt-2">+12.5% from last week</p> */}
         </div>
         <div className="bg-white dark:bg-[#0f1f35] rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6">
           <div className="flex items-center justify-between mb-2">
@@ -19,7 +19,7 @@ export default function UsageStatistics() {
             <Clock className="size-5 text-[#10b981]" />
           </div>
           <p className="text-3xl font-semibold text-[#111827] dark:text-[#e8eef5]">2.3h</p>
-          <p className="text-xs text-[#10b981] mt-2">+5.2% from last week</p>
+          {/* <p className="text-xs text-[#10b981] mt-2">+5.2% from last week</p> */}
         </div>
         <div className="bg-white dark:bg-[#0f1f35] rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6">
           <div className="flex items-center justify-between mb-2">
@@ -27,7 +27,7 @@ export default function UsageStatistics() {
             <Car className="size-5 text-[#f59e0b]" />
           </div>
           <p className="text-3xl font-semibold text-[#111827] dark:text-[#e8eef5]">9-11AM</p>
-          <p className="text-xs text-[#6b7280] dark:text-[#94a3b8] mt-2">Morning rush</p>
+          {/* <p className="text-xs text-[#6b7280] dark:text-[#94a3b8] mt-2">Morning rush</p> */}
         </div>
         <div className="bg-white dark:bg-[#0f1f35] rounded-lg border border-[#e5e7eb] dark:border-[rgba(59,130,246,0.15)] p-6">
           <div className="flex items-center justify-between mb-2">
@@ -35,7 +35,7 @@ export default function UsageStatistics() {
             <Activity className="size-5 text-[#8b5cf6]" />
           </div>
           <p className="text-3xl font-semibold text-[#111827] dark:text-[#e8eef5]">82%</p>
-          <p className="text-xs text-[#10b981] mt-2">+3.8% from last week</p>
+          {/* <p className="text-xs text-[#10b981] mt-2">+3.8% from last week</p> */}
         </div>
       </div>
 
